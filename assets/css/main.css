@@ -1,0 +1,84 @@
+/* =====================================================================
+   DESIGN TOKENS — Ping Pong League
+   Company colors: blue & yellow. Opposing players = blue vs yellow.
+   Three type roles:  Anton (scoreboard/display) · Inter (UI) · mono (stats)
+   ===================================================================== */
+:root {
+  /* surfaces (deep navy -> the "arena") */
+  --bg:        #0A1A33;
+  --surface:   #11264A;
+  --surface-2: #16315E;
+  --line:      #24407A;
+
+  /* brand / player colors */
+  --blue:        #2F6FED;   /* player A */
+  --blue-deep:   #1B4FC4;
+  --yellow:      #FFCB2D;   /* player B */
+  --yellow-deep: #E6A800;
+
+  /* text */
+  --ink:    #EAF1FF;
+  --muted:  #8AA0C4;
+  --faint:  #5A6F95;
+
+  /* status */
+  --good: #36D399;
+  --bad:  #F4516C;
+
+  --radius: 14px;
+  --radius-sm: 9px;
+  --shadow: 0 10px 30px -12px rgba(0,0,0,.6);
+
+  --font-display: 'Anton', system-ui, sans-serif;
+  --font-ui:      'Inter', system-ui, sans-serif;
+  --font-mono:    'Spline Sans Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body, #__nuxt { height: 100%; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #15336b 0%, transparent 60%),
+    var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* utility primitives used across the app */
+.display { font-family: var(--font-display); letter-spacing: .02em; text-transform: uppercase; }
+.mono    { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.btn {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  padding: .6rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: transform .06s ease, filter .15s ease;
+}
+.btn:hover { filter: brightness(1.12); }
+.btn:active { transform: translateY(1px); }
+.btn-blue   { background: var(--blue);   border-color: var(--blue-deep);   color: #fff; }
+.btn-yellow { background: var(--yellow); border-color: var(--yellow-deep); color: #1a1300; }
+
+.pill {
+  font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--line);
+  color: var(--muted);
+}
+.pill-blue   { background: rgba(47,111,237,.16);  color: #9cc0ff; border-color: var(--blue-deep); }
+.pill-yellow { background: rgba(255,203,45,.16);   color: #ffe08a; border-color: var(--yellow-deep); }
+
+a { color: inherit; }
