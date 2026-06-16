@@ -5,12 +5,12 @@
 // just points you to the dock.
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
-const { isOfficial } = useRole()
+const { isOfficial, isCommissioner } = useRole()
 const lm = useLiveMatch()
 const { match, names, activePlayers, loading, err, busy } = lm
 
 const mh = useMatchHistory()
-const { matches: histMatches, loading: histLoading, err: histErr } = mh
+const { matches: histMatches, loading: histLoading, err: histErr, busy: histBusy } = mh
 
 function fmtDate(s: string) {
   if (!s) return ''
@@ -82,7 +82,14 @@ async function doRecord() {
     playerA: selA.value, playerB: selB.value, type: selType.value, games: uploadGames.value,
     colorA: swapColors.value ? 'yellow' : 'blue', colorB: swapColors.value ? 'blue' : 'yellow',
   })
-  if (ok) gi.value = [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }]
+  if (ok) { gi.value = [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }]; mh.load() }
+}
+
+// delete a completed match (commissioner) — confirm inline, then recompute
+const delConfirm = ref<string | null>(null)
+async function doDelete(id: string) {
+  const ok = await mh.deleteMatch(id)
+  if (ok) delConfirm.value = null
 }
 </script>
 
@@ -180,6 +187,13 @@ async function doRecord() {
               title="Scoring system was adjusted by the commissioner before this match"
             >⚡ adjusted</span>
             <span v-else class="flag-spacer" />
+            <span v-if="isCommissioner" class="del">
+              <template v-if="delConfirm === m.id">
+                <button class="mini" :disabled="histBusy" @click="delConfirm = null">cancel</button>
+                <button class="mini danger" :disabled="histBusy" @click="doDelete(m.id)">delete</button>
+              </template>
+              <button v-else class="mini ghost" :disabled="histBusy" title="Delete match" @click="delConfirm = m.id">🗑</button>
+            </span>
           </div>
         </div>
       </section>
@@ -232,7 +246,7 @@ select {
 .hist-h { font-size: 1rem; margin: 0 0 .75rem; letter-spacing: .05em; color: var(--muted); }
 .hist-list { overflow: hidden; }
 .hrow {
-  display: grid; grid-template-columns: auto 1fr auto auto; gap: .75rem; align-items: center;
+  display: grid; grid-template-columns: auto 1fr auto auto auto; gap: .75rem; align-items: center;
   padding: .7rem 1rem; border-bottom: 1px solid var(--line);
 }
 .hrow:last-child { border-bottom: 0; }
@@ -250,6 +264,11 @@ select {
 }
 .flag { font-size: .72rem; color: var(--yellow-deep); font-weight: 700; white-space: nowrap; }
 .flag-spacer { width: 0; }
+.del { display: flex; gap: .3rem; justify-content: flex-end; }
+.mini { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); border-radius: 6px; padding: .2rem .5rem; cursor: pointer; font-size: .74rem; }
+.mini.ghost { background: none; border-color: transparent; opacity: .55; }
+.mini.ghost:hover { opacity: 1; border-color: var(--line); }
+.mini.danger { background: rgba(244, 81, 108, .16); border-color: var(--bad); color: #ffb3c0; }
 @media (max-width: 640px) {
   .grid2 { grid-template-columns: 1fr; }
   .hrow { grid-template-columns: 1fr auto; }

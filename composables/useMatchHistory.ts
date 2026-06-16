@@ -10,9 +10,11 @@ import { ref } from 'vue'
 
 export function useMatchHistory() {
   const supabase = useSupabase()
+  const { accessCode } = useRole()
   const matches = ref<any[]>([])
   const loading = ref(true)
   const err = ref<string | null>(null)
+  const busy = ref(false)
   let channel: RealtimeChannel | null = null
 
   function summarize(m: any) {
@@ -89,5 +91,14 @@ export function useMatchHistory() {
     if (channel) { supabase.removeChannel(channel); channel = null }
   }
 
-  return { matches, loading, err, load, subscribe, unsubscribe }
+  async function deleteMatch(matchId: string) {
+    busy.value = true
+    const { error } = await supabase.rpc('delete_match', { p_code: accessCode.value, p_match_id: matchId })
+    if (error) err.value = error.message
+    else await load()
+    busy.value = false
+    return !error
+  }
+
+  return { matches, loading, err, busy, load, subscribe, unsubscribe, deleteMatch }
 }
