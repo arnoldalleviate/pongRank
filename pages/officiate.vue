@@ -8,7 +8,7 @@
 // Read-only for viewers (they can watch the dashboard live).
 import { ref, computed, onMounted } from 'vue'
 
-const { isOfficial, isCommissioner } = useRole()
+const { isOfficial } = useRole()
 const lm = useLiveMatch()
 const {
   match, names, points, currentGame, serverId, aGamesWon, bGamesWon,
@@ -67,8 +67,8 @@ async function doFinish() {
     <!-- no live match -->
     <div v-if="!match" class="card empty">
       <p class="muted big">No match in progress.</p>
-      <NuxtLink v-if="isCommissioner" to="/matches" class="btn btn-yellow">Create a match</NuxtLink>
-      <p v-else class="muted">A commissioner starts a match from “Create match”.</p>
+      <NuxtLink v-if="isOfficial" to="/matches" class="btn btn-yellow">Create a match</NuxtLink>
+      <p v-else class="muted">An official starts a match from “Create match”.</p>
     </div>
 
     <template v-else>
@@ -133,7 +133,7 @@ async function doFinish() {
           <button class="btn btn-yellow" :disabled="busy" @click="lm.startNextGame(yellowId)">{{ yellowName }}</button>
         </template>
         <button v-if="decided" class="btn btn-yellow" :disabled="busy" @click="doFinish">{{ isTournament ? 'Finish match ▸' : 'Finish match &amp; apply ratings' }}</button>
-        <template v-if="isCommissioner">
+        <template v-if="isOfficial">
           <button v-if="!showCancel" class="btn danger" :disabled="busy" @click="showCancel = true">Cancel match</button>
           <span v-else class="confirm">
             <input v-model="cancelReason" class="reason" placeholder="Reason (required)" />

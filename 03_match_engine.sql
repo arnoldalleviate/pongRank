@@ -63,7 +63,7 @@ create or replace function mov_multiplier(
 $$;
 
 -- ---------------------------------------------------------------------
--- 2. START A MATCH  (commissioner)  -> creates the match + game 1
+-- 2. START A MATCH  (official+)  -> creates the match + game 1
 -- ---------------------------------------------------------------------
 create or replace function start_match(
   p_code         text,
@@ -81,7 +81,7 @@ declare
   v_start  int;
   v_match  matches;
 begin
-  perform require_role(p_code, 'commissioner');
+  perform require_role(p_code, 'official');
 
   if p_player_a = p_player_b then
     raise exception 'A match needs two different players';
@@ -463,7 +463,7 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------
--- 8. CANCEL MATCH  (commissioner)  -> abort an in-progress match, no ELO.
+-- 8. CANCEL MATCH  (official+)  -> abort an in-progress match, no ELO.
 --    A reason is required (UI flow: cancel -> reason -> confirm).
 -- ---------------------------------------------------------------------
 create or replace function cancel_match(p_code text, p_match_id uuid, p_reason text)
@@ -471,7 +471,7 @@ returns matches
 language plpgsql security definer set search_path = public as $$
 declare v_match matches;
 begin
-  perform require_role(p_code, 'commissioner');
+  perform require_role(p_code, 'official');
   if p_reason is null or btrim(p_reason) = '' then
     raise exception 'A reason is required to cancel a match';
   end if;

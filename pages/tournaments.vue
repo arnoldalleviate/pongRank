@@ -6,7 +6,7 @@
 //  - Tournament games are ELO-neutral.
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
-const { isCommissioner } = useRole()
+const { isOfficial, isCommissioner } = useRole()
 const t = useTournaments()
 const { current, rounds, champion, names, seedPool, participants, loading, err, busy } = t
 const lm = useLiveMatch()
@@ -63,7 +63,7 @@ function slotName(id: string | null, round: number) {
 const liveTmId = computed(() => lm.match.value?.tournament_match_id ?? null)
 function isLive(m: any) { return liveTmId.value === m.id }
 function playable(m: any) {
-  return isCommissioner.value && current.value?.status === 'active'
+  return isOfficial.value && current.value?.status === 'active'
     && m.player_a && m.player_b && !m.winner_id && !lm.match.value
 }
 async function play(m: any) {

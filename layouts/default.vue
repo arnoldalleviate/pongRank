@@ -24,7 +24,7 @@ async function submitCode() {
         <span class="display brand-name">Ping&nbsp;League</span>
       </NuxtLink>
 
-      <NuxtLink v-if="!liveMatch && isCommissioner" to="/matches" class="create-cta">
+      <NuxtLink v-if="!liveMatch && isOfficial" to="/matches" class="create-cta">
         <span class="cta-plus" aria-hidden="true">＋</span> Create match
       </NuxtLink>
 

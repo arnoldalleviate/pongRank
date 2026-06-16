@@ -5,7 +5,7 @@
 // just points you to the dock.
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
-const { isCommissioner } = useRole()
+const { isOfficial } = useRole()
 const lm = useLiveMatch()
 const { match, names, activePlayers, loading, err, busy } = lm
 
@@ -19,7 +19,7 @@ function fmtDate(s: string) {
 
 onMounted(async () => {
   await lm.load()                       // layout owns the live subscription
-  if (isCommissioner.value) lm.loadActivePlayers()
+  if (isOfficial.value) lm.loadActivePlayers()
   mh.load()
   mh.subscribe()
 })
@@ -99,7 +99,7 @@ async function doRecord() {
       </div>
 
       <!-- idle + commissioner: start a match / quick upload -->
-      <div v-else-if="isCommissioner" class="card setup">
+      <div v-else-if="isOfficial" class="card setup">
         <h2 class="setup-h">{{ selMode === 'live' ? 'Start a match' : 'Record a result' }}</h2>
         <div class="grid2">
           <label>Player A ({{ swapColors ? 'yellow' : 'blue' }})

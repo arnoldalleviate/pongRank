@@ -23,12 +23,16 @@ a table queue, and tournaments.
   - `viewer` — reads everything (no code needed)
   - `official` — can log game scores (needs official code)
   - `commissioner` — can do everything (needs commissioner code)
-  - **Write-permission split (refined 2026-06-12):** _commissioner-only_ —
-    player add/retire (`add_player`, `set_player_active`), match create
-    (`start_match`), match cancel (`cancel_match`). _official_ — in-match scoring
-    only (`start_game`, `add_point`, `remove_last_point`, `submit_game_score`,
-    `complete_match`). NOTE: `add_player` was moved official → commissioner here,
-    overriding its original `official+` gating in `01_schema.sql` (see `04_players.sql`).
+  - **Write-permission split (refined 2026-06-16):** _official+_ runs matches —
+    `start_match`, `cancel_match`, in-match scoring (`start_game`, `add_point`,
+    `remove_last_point`, `flip_point`, `flip_first_server`, `submit_game_score`,
+    `complete_match`), and tournament bracket play (`start_tournament_match`,
+    `complete_tournament_match`). _commissioner-only_ — roster (`add_player`,
+    `set_player_active`), seasons (`create_season`, `activate_season`,
+    `set_season_config`, `end_season`), codes (`set_access_codes`), tournament
+    setup (`create_tournament`, `set_tournament_seeds`, `start_tournament`).
+    NOTE: `add_player` is commissioner (overrides its `official+` default in
+    `01_schema.sql`); match create/cancel moved commissioner → official 2026-06-16.
 - **Role enforcement is server-side and real, not cosmetic:** RLS allows public
   SELECT but has **no write policies**; every mutation goes through a
   `SECURITY DEFINER` rpc that checks the passed code via `verify_access` /

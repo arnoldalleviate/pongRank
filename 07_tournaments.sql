@@ -149,7 +149,7 @@ begin
 end; $$;
 
 -- ---------------------------------------------------------------------
--- start a bracket match live (commissioner) — creates a real match linked
+-- start a bracket match live (official+) — creates a real match linked
 -- to the bracket slot; played through the normal scoreboard/Officiate flow
 -- ---------------------------------------------------------------------
 create or replace function start_tournament_match(
@@ -163,7 +163,7 @@ declare
   v_cur uuid;
   v_match matches;
 begin
-  perform require_role(p_code, 'commissioner');
+  perform require_role(p_code, 'official');
   select * into v_tm from tournament_matches where id = p_tournament_match_id;
   if v_tm.id is null then raise exception 'Bracket match not found'; end if;
   select * into v_t from tournaments where id = v_tm.tournament_id;
