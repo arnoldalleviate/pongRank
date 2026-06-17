@@ -265,7 +265,7 @@ select {
 .history { margin-top: 2rem; }
 .hist-head { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 .75rem; padding-right: 1rem; }
 .hist-h { font-size: 1rem; margin: 0; letter-spacing: .05em; color: var(--muted); }
-.hist-elo-h { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); white-space: nowrap; }
+.hist-elo-h { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink); white-space: nowrap; }
 .hist-list { overflow: hidden; }
 .hrow {
   display: grid; grid-template-columns: auto 1fr auto auto auto; gap: .75rem; align-items: center;
