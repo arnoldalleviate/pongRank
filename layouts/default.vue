@@ -4,6 +4,11 @@ const { match: liveMatch, decided, start: startLiveMatch } = useLiveMatch()
 const showCodeEntry = ref(false)
 const codeInput = ref('')
 const menuOpen = ref(false)   // mobile hamburger drawer
+const ballKey = ref(0)        // bumps each toggle to replay the ball-bounce animation
+function toggleMenu() {
+  menuOpen.value = !menuOpen.value
+  ballKey.value++
+}
 
 onMounted(() => {
   init()
@@ -34,9 +39,10 @@ async function submitCode() {
         :class="{ open: menuOpen }"
         :aria-expanded="menuOpen"
         aria-label="Toggle navigation menu"
-        @click="menuOpen = !menuOpen"
+        @click="toggleMenu"
       >
         <span /><span /><span />
+        <i v-if="ballKey" :key="ballKey" class="pong" aria-hidden="true" />
       </button>
 
       <nav class="nav" :class="{ open: menuOpen }" @click="menuOpen = false">
@@ -114,6 +120,7 @@ async function submitCode() {
 
 /* hamburger — hidden on desktop, shown on mobile via the media query below */
 .hamburger {
+  position: relative; overflow: hidden;
   display: none; flex-direction: column; justify-content: center; gap: 5px;
   width: 44px; height: 40px; padding: 0 10px; cursor: pointer;
   background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm);
@@ -122,6 +129,26 @@ async function submitCode() {
 .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .hamburger.open span:nth-child(2) { opacity: 0; }
 .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ping pong ball that bounces across the button on each toggle (replayed via :key) */
+.pong {
+  position: absolute; left: 0; bottom: 6px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #fff; box-shadow: 0 0 6px rgba(255, 255, 255, .75);
+  pointer-events: none;
+  animation: pong-bounce .6s linear forwards;
+}
+@keyframes pong-bounce {
+  0%   { transform: translate(2px, 0);     opacity: 0; }
+  10%  { opacity: 1; }
+  25%  { transform: translate(11px, -16px); }
+  43%  { transform: translate(19px, 0); }
+  60%  { transform: translate(27px, -10px); }
+  78%  { transform: translate(33px, 0); }
+  90%  { opacity: 1; }
+  100% { transform: translate(40px, -5px); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .pong { display: none; } }
 
 .code-entry { display: flex; gap: .5rem; margin: .75rem 1.25rem 0; padding: .75rem; }
 .code-input {
