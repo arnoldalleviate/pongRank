@@ -49,7 +49,7 @@ const showCancel = ref(false)
 const cancelReason = ref('')
 async function doCancel() {
   const ok = await lm.cancelMatch(cancelReason.value)
-  if (ok) { showCancel.value = false; cancelReason.value = '' }
+  if (ok) { showCancel.value = false; cancelReason.value = ''; navigateTo('/matches') }
 }
 
 async function doFinish() {
