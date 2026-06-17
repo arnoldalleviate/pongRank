@@ -104,7 +104,7 @@ onUnmounted(() => {
 .head { color: var(--faint); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
 .num { text-align: right; }
 .head .num { text-align: right; }
-.name { font-weight: 600; }
+.name { font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .elo { color: var(--yellow); font-weight: 600; cursor: help; }
 .rank { color: var(--muted); }
 .pos { color: var(--good); }
@@ -118,7 +118,11 @@ onUnmounted(() => {
 
 /* On narrow screens keep the essentials: #, Player, ELO, W–L, Streak */
 @media (max-width: 640px) {
-  .row { grid-template-columns: 2.2rem 1fr 4rem 4.5rem 4.5rem; }
+  .row {
+    grid-template-columns: 1.5rem 1fr 3rem 3.4rem 2.6rem;
+    gap: .4rem; padding: .8rem .7rem;
+  }
   .wide { display: none; }
+  .head > span:first-child, .rank { text-align: center; }   /* re-center the rank column */
 }
 </style>
