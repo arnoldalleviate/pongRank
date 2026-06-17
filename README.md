@@ -127,6 +127,15 @@ Already wired and deploying via `.github/workflows/deploy.yml` on every push to
    - `NUXT_PUBLIC_SUPABASE_KEY` = your anon public key
 4. Push to `live`; the site lands at `https://<username>.github.io/<repo>/`.
 
+## Branching model
+- **`dev`** — the default branch; all day-to-day work and feature testing happens
+  here. Pushing to `dev` does **not** deploy.
+- **`live`** — the production branch. Pushing/merging here triggers the Pages
+  deploy. Promote a release with `git checkout live && git merge dev && git push`
+  (or open a PR from `dev` → `live`).
+
+This keeps the deployed site stable while features are tried out on `dev` first.
+
 ## Notes
 - Only ever use the **anon public** key in the frontend. The `service_role` key
   must never touch it — RLS + code-checked rpcs are what keep writes safe.
