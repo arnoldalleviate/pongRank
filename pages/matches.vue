@@ -168,17 +168,31 @@ async function doDelete(id: string) {
         <h2 class="hist-h display">Recent matches</h2>
         <p v-if="histLoading" class="muted">Loading history…</p>
         <p v-else-if="histErr" class="err">{{ histErr }}</p>
-        <p v-else-if="!histMatches.length" class="muted">No completed matches yet.</p>
+        <p v-else-if="!histMatches.length" class="muted">No matches yet.</p>
         <div v-else class="card hist-list">
-          <div v-for="m in histMatches" :key="m.id" class="hrow" :class="{ flagged: m.scoringAdjusted }">
+          <div
+            v-for="m in histMatches"
+            :key="m.id"
+            class="hrow"
+            :class="{ flagged: m.scoringAdjusted, cancelled: m.status === 'cancelled' }"
+          >
             <span class="hdate mono">{{ fmtDate(m.completed_at) }}</span>
             <span class="hresult">
-              <strong>{{ m.winnerName }}</strong> defeats {{ m.loserName }}
-              <span class="hscore mono">{{ m.scoreLine }}</span>
-              <span v-if="m.type === 'series' && m.detail.length" class="hgames mono">({{ m.detail.join(', ') }})</span>
-              <span v-if="m.entry_mode === 'quick_upload'" class="tag">uploaded</span>
+              <template v-if="m.status === 'cancelled'">
+                {{ m.playerAName }}<span class="vs">vs</span>{{ m.playerBName }}
+                <span class="tag cancel">cancelled</span>
+                <span v-if="m.cancelReason" class="reason">{{ m.cancelReason }}</span>
+              </template>
+              <template v-else>
+                <strong>{{ m.winnerName }}</strong> defeats {{ m.loserName }}
+                <span class="hscore mono">{{ m.scoreLine }}</span>
+                <span v-if="m.type === 'series' && m.detail.length" class="hgames mono">({{ m.detail.join(', ') }})</span>
+                <span v-if="m.entry_mode === 'quick_upload'" class="tag">uploaded</span>
+              </template>
             </span>
+            <span v-if="m.status === 'cancelled'" class="helo mono dash">—</span>
             <span
+              v-else
               class="helo mono"
               :title="`ELO change — ${m.winnerName}: +${m.winnerElo}, ${m.loserName}: ${m.loserElo}`"
             >
@@ -267,6 +281,12 @@ select {
 }
 .flag { font-size: .72rem; color: var(--yellow-deep); font-weight: 700; white-space: nowrap; }
 .flag-spacer { width: 0; }
+.hrow.cancelled { opacity: .72; }
+.hrow.cancelled .hresult { color: var(--muted); }
+.vs { color: var(--faint); margin: 0 .3rem; }
+.tag.cancel { color: #ffb3c0; border-color: var(--bad); }
+.reason { color: var(--faint); font-style: italic; margin-left: .4rem; }
+.helo.dash { color: var(--faint); cursor: default; }
 .del { display: flex; gap: .3rem; justify-content: flex-end; }
 .mini { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); border-radius: 6px; padding: .2rem .5rem; cursor: pointer; font-size: .74rem; }
 .mini.ghost { background: none; border-color: transparent; opacity: .55; }
