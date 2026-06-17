@@ -316,6 +316,8 @@ update seasons set elo_floor = 900
  where id = (select active_season_id from app_settings where id = 1);
 
 -- =====================================================================
---  END — after running, recompute the active season to apply retroactively:
---    select recompute_season('<commissioner_code>', '<active_season_id>');
+--  END — after running, recompute the active season to apply retroactively
+--  (resolves the active season id for you):
+--    select recompute_season('<commissioner_code>',
+--             (select active_season_id from app_settings where id = 1));
 -- =====================================================================
