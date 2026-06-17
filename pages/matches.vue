@@ -165,7 +165,10 @@ async function doDelete(id: string) {
 
       <!-- match history -->
       <section class="history">
-        <h2 class="hist-h display">Recent matches</h2>
+        <div class="hist-head">
+          <h2 class="hist-h display">Recent matches</h2>
+          <span v-if="histMatches.length" class="hist-elo-h">ELO Change</span>
+        </div>
         <p v-if="histLoading" class="muted">Loading history…</p>
         <p v-else-if="histErr" class="err">{{ histErr }}</p>
         <p v-else-if="!histMatches.length" class="muted">No matches yet.</p>
@@ -260,7 +263,9 @@ select {
 
 /* match history */
 .history { margin-top: 2rem; }
-.hist-h { font-size: 1rem; margin: 0 0 .75rem; letter-spacing: .05em; color: var(--muted); }
+.hist-head { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 .75rem; padding-right: 1rem; }
+.hist-h { font-size: 1rem; margin: 0; letter-spacing: .05em; color: var(--muted); }
+.hist-elo-h { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); white-space: nowrap; }
 .hist-list { overflow: hidden; }
 .hrow {
   display: grid; grid-template-columns: auto 1fr auto auto auto; gap: .75rem; align-items: center;
