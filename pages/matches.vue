@@ -299,8 +299,21 @@ select {
 .mini.danger { background: rgba(244, 81, 108, .16); border-color: var(--bad); color: #ffb3c0; }
 @media (max-width: 640px) {
   .grid2 { grid-template-columns: 1fr; }
-  .hrow { grid-template-columns: 1fr auto; }
-  .hdate { grid-column: 1 / -1; }
-  .helo { grid-column: 2; }
+  /* stack each history row: date + ELO on top, result full-width, flag/delete footer */
+  .hrow {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "date   elo"
+      "result result"
+      "meta   del";
+    gap: .3rem .75rem;
+  }
+  .hdate   { grid-area: date; }
+  .helo    { grid-area: elo; }
+  .hresult { grid-area: result; }
+  .flag, .flag-spacer { grid-area: meta; align-self: center; }
+  .del     { grid-area: del; }
+  /* per-game series breakdown drops to its own full-width line so it isn't clipped */
+  .hgames  { display: block; margin: .15rem 0 0; }
 }
 </style>
