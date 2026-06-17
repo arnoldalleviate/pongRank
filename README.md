@@ -116,7 +116,7 @@ npm run dev               # http://localhost:3000
 
 ## Deploy to GitHub Pages
 Already wired and deploying via `.github/workflows/deploy.yml` on every push to
-`main`. To stand up your own copy:
+`live` (the deploy branch). To stand up your own copy:
 
 1. Set `app.baseURL` in `nuxt.config.ts` to **`/<your-repo-name>/`** (this repo
    uses `/pongRank/`). For a custom domain or `username.github.io` root, use `/`.
@@ -125,7 +125,7 @@ Already wired and deploying via `.github/workflows/deploy.yml` on every push to
    not Secrets — the anon key is public by design and is needed at build time):
    - `NUXT_PUBLIC_SUPABASE_URL` = your Project URL
    - `NUXT_PUBLIC_SUPABASE_KEY` = your anon public key
-4. Push to `main`; the site lands at `https://<username>.github.io/<repo>/`.
+4. Push to `live`; the site lands at `https://<username>.github.io/<repo>/`.
 
 ## Notes
 - Only ever use the **anon public** key in the frontend. The `service_role` key
