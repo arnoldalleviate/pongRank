@@ -76,3 +76,6 @@ All three are per-season levers, so they get re-tuned as Season 0 accumulates re
 | `elo_floor` | 900 | Lowest a rating can fall. |
 
 > Numbers above are the current settings and will be calibrated further as more matches are played.
+
+
+# Thank you so much for participating!
