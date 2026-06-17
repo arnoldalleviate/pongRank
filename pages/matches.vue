@@ -178,7 +178,10 @@ async function doDelete(id: string) {
               <span v-if="m.type === 'series' && m.detail.length" class="hgames mono">({{ m.detail.join(', ') }})</span>
               <span v-if="m.entry_mode === 'quick_upload'" class="tag">uploaded</span>
             </span>
-            <span class="helo mono">
+            <span
+              class="helo mono"
+              :title="`ELO change — ${m.winnerName}: +${m.winnerElo}, ${m.loserName}: ${m.loserElo}`"
+            >
               <span class="pos">+{{ m.winnerElo }}</span> / <span class="neg">{{ m.loserElo }}</span>
             </span>
             <span
@@ -255,7 +258,7 @@ select {
 .hresult { font-size: .92rem; }
 .hscore { color: var(--ink); margin-left: .4rem; }
 .hgames { color: var(--faint); font-size: .8rem; margin-left: .3rem; }
-.helo { font-size: .85rem; white-space: nowrap; text-align: right; }
+.helo { font-size: .85rem; white-space: nowrap; text-align: right; cursor: help; }
 .helo .pos { color: var(--good); }
 .helo .neg { color: var(--bad); }
 .tag {

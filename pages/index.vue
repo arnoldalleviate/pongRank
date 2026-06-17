@@ -67,7 +67,6 @@ onUnmounted(() => {
         <span>#</span>
         <span>Player</span>
         <span class="mono num">ELO</span>
-        <span class="mono num wide">Peak</span>
         <span class="mono num">W–L</span>
         <span class="mono num wide">Games</span>
         <span class="mono num wide">Pts±</span>
@@ -76,8 +75,7 @@ onUnmounted(() => {
       <div v-for="p in standings" :key="p.player_id" class="row" :class="{ recent: lastPair.includes(p.player_id) }">
         <span class="mono rank">{{ p.rank }}</span>
         <span class="name">{{ p.name }}</span>
-        <span class="mono num elo">{{ p.elo }}</span>
-        <span class="mono num wide peak">{{ p.peak_elo }}</span>
+        <span class="mono num elo" :title="`Peak ELO: ${p.peak_elo}`">{{ p.elo }}</span>
         <span class="mono num">{{ p.wins }}–{{ p.losses }}</span>
         <span class="mono num wide muted">{{ p.games_won }}–{{ p.games_lost }}</span>
         <span
@@ -99,7 +97,7 @@ onUnmounted(() => {
 .table { overflow: hidden; }
 .row {
   display: grid;
-  grid-template-columns: 2.5rem 1fr 4rem 4rem 4.5rem 5rem 4.5rem 4.5rem;
+  grid-template-columns: 2.5rem 1fr 4rem 4.5rem 5rem 4.5rem 4.5rem;
   align-items: center; gap: .5rem; padding: .8rem 1rem; border-bottom: 1px solid var(--line);
 }
 .row:last-child { border-bottom: 0; }
@@ -107,8 +105,7 @@ onUnmounted(() => {
 .num { text-align: right; }
 .head .num { text-align: right; }
 .name { font-weight: 600; }
-.elo { color: var(--yellow); font-weight: 600; }
-.peak { color: var(--muted); }
+.elo { color: var(--yellow); font-weight: 600; cursor: help; }
 .rank { color: var(--muted); }
 .pos { color: var(--good); }
 .neg { color: var(--bad); }
