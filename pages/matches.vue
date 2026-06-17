@@ -10,7 +10,7 @@ const lm = useLiveMatch()
 const { match, names, activePlayers, loading, err, busy } = lm
 
 const mh = useMatchHistory()
-const { matches: histMatches, loading: histLoading, err: histErr, busy: histBusy } = mh
+const { matches: histMatches, loading: histLoading, err: histErr, busy: histBusy, note: histNote, noteUrl: histNoteUrl } = mh
 
 function fmtDate(s: string) {
   if (!s) return ''
@@ -165,6 +165,12 @@ async function doDelete(id: string) {
 
       <!-- match history -->
       <section class="history">
+        <div v-if="histNote" class="commish-note">
+          <span class="commish-badge">📣 Commissioner</span>
+          <span class="commish-text">{{ histNote }}
+            <a v-if="histNoteUrl" :href="histNoteUrl" target="_blank" rel="noopener" class="commish-link">Details →</a>
+          </span>
+        </div>
         <div class="hist-head">
           <h2 class="hist-h display">Recent matches</h2>
           <span v-if="histMatches.length" class="hist-elo-h">ELO Change</span>
@@ -263,6 +269,16 @@ select {
 
 /* match history */
 .history { margin-top: 2rem; }
+.commish-note {
+  display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap;
+  background: rgba(255, 203, 45, .07); border: 1px solid var(--line);
+  border-left: 3px solid var(--yellow); border-radius: var(--radius-sm);
+  padding: .7rem .9rem; margin-bottom: 1rem; font-size: .9rem; color: var(--ink);
+}
+.commish-badge { font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--yellow-deep); white-space: nowrap; }
+.commish-text { flex: 1; min-width: 12rem; }
+.commish-link { color: var(--yellow); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.commish-link:hover { text-decoration: underline; }
 .hist-head { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 .75rem; padding-right: 1rem; }
 .hist-h { font-size: 1rem; margin: 0; letter-spacing: .05em; color: var(--muted); }
 .hist-elo-h { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink); white-space: nowrap; }

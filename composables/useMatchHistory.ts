@@ -16,6 +16,8 @@ export function useMatchHistory() {
   const loading = ref(true)
   const err = ref<string | null>(null)
   const busy = ref(false)
+  const note = ref<string | null>(null)       // commissioner announcement banner
+  const noteUrl = ref<string | null>(null)    // optional "Details →" link for the note
   let channel: RealtimeChannel | null = null
 
   function summarize(m: any) {
@@ -33,7 +35,10 @@ export function useMatchHistory() {
   async function load() {
     try {
       const { data: s } = await supabase.rpc('get_public_settings')
-      const seasonId = (Array.isArray(s) ? s[0] : s)?.active_season_id
+      const settings = Array.isArray(s) ? s[0] : s
+      note.value = settings?.commissioner_note ?? null
+      noteUrl.value = settings?.commissioner_note_url ?? null
+      const seasonId = settings?.active_season_id
       if (!seasonId) { matches.value = []; return }
 
       const [mRes, pRes, eRes] = await Promise.all([
@@ -111,5 +116,5 @@ export function useMatchHistory() {
     return !error
   }
 
-  return { matches, loading, err, busy, load, subscribe, unsubscribe, deleteMatch }
+  return { matches, loading, err, busy, note, noteUrl, load, subscribe, unsubscribe, deleteMatch }
 }
