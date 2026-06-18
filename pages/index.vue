@@ -38,6 +38,14 @@ function streakLabel(s: number) {
   return s > 0 ? `W${s}` : s < 0 ? `L${-s}` : '—'
 }
 
+// Players who've logged a match are ranked; 0-game players sit on the Bench
+// (so a still-at-start player can't appear to outrank someone who's played).
+const played = computed(() => standings.value.filter((p: any) => p.matches_played > 0))
+const bench = computed(() =>
+  standings.value.filter((p: any) => !p.matches_played)
+    .slice().sort((a: any, b: any) => a.name.localeCompare(b.name)),
+)
+
 onMounted(() => {
   load()
   channel = supabase
@@ -62,31 +70,42 @@ onUnmounted(() => {
       No players yet — add players and activate a season (see setup runbook).
     </p>
 
-    <div v-else class="card table">
-      <div class="row head">
-        <span>#</span>
-        <span>Player</span>
-        <span class="mono num">ELO</span>
-        <span class="mono num">W–L</span>
-        <span class="mono num wide">Games</span>
-        <span class="mono num wide">Pts±</span>
-        <span class="mono num">Streak</span>
+    <template v-else>
+      <div v-if="played.length" class="card table">
+        <div class="row head">
+          <span>#</span>
+          <span>Player</span>
+          <span class="mono num">ELO</span>
+          <span class="mono num">W–L</span>
+          <span class="mono num wide">Games</span>
+          <span class="mono num wide">Pts±</span>
+          <span class="mono num">Streak</span>
+        </div>
+        <div v-for="(p, i) in played" :key="p.player_id" class="row" :class="{ recent: lastPair.includes(p.player_id) }">
+          <span class="mono rank">{{ i + 1 }}</span>
+          <span class="name">{{ p.name }}</span>
+          <span class="mono num elo" :title="`Peak ELO: ${p.peak_elo}`">{{ p.elo }}</span>
+          <span class="mono num">{{ p.wins }}–{{ p.losses }}</span>
+          <span class="mono num wide muted">{{ p.games_won }}–{{ p.games_lost }}</span>
+          <span
+            class="mono num wide"
+            :class="{ pos: p.points_for - p.points_against > 0, neg: p.points_for - p.points_against < 0 }"
+          >{{ p.points_for - p.points_against > 0 ? '+' : '' }}{{ p.points_for - p.points_against }}</span>
+          <span class="mono num" :class="{ pos: p.current_streak > 0, neg: p.current_streak < 0 }">
+            {{ streakLabel(p.current_streak) }}
+          </span>
+        </div>
       </div>
-      <div v-for="p in standings" :key="p.player_id" class="row" :class="{ recent: lastPair.includes(p.player_id) }">
-        <span class="mono rank">{{ p.rank }}</span>
-        <span class="name">{{ p.name }}</span>
-        <span class="mono num elo" :title="`Peak ELO: ${p.peak_elo}`">{{ p.elo }}</span>
-        <span class="mono num">{{ p.wins }}–{{ p.losses }}</span>
-        <span class="mono num wide muted">{{ p.games_won }}–{{ p.games_lost }}</span>
-        <span
-          class="mono num wide"
-          :class="{ pos: p.points_for - p.points_against > 0, neg: p.points_for - p.points_against < 0 }"
-        >{{ p.points_for - p.points_against > 0 ? '+' : '' }}{{ p.points_for - p.points_against }}</span>
-        <span class="mono num" :class="{ pos: p.current_streak > 0, neg: p.current_streak < 0 }">
-          {{ streakLabel(p.current_streak) }}
-        </span>
-      </div>
-    </div>
+      <p v-else class="muted">No matches played yet this season — everyone's on the bench.</p>
+
+      <!-- Bench: players with 0 logged games, unranked until they play -->
+      <section v-if="bench.length" class="bench">
+        <h2 class="bench-h">Bench <span class="bench-count">{{ bench.length }} · awaiting first match</span></h2>
+        <div class="card bench-list">
+          <span v-for="p in bench" :key="p.player_id" class="bench-chip">{{ p.name }}</span>
+        </div>
+      </section>
+    </template>
   </section>
 </template>
 
@@ -115,6 +134,13 @@ onUnmounted(() => {
   0%, 100% { box-shadow: inset 3px 0 0 0 var(--yellow); }
   50% { box-shadow: inset 3px 0 0 0 var(--yellow), 0 0 16px -7px var(--yellow); }
 }
+
+/* Bench — 0-game players, no rank/stats shown (just names) */
+.bench { margin-top: 1.5rem; }
+.bench-h { font-size: 1rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 .6rem; display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+.bench-count { font-size: .72rem; color: var(--faint); font-weight: 400; letter-spacing: .03em; text-transform: none; }
+.bench-list { display: flex; flex-wrap: wrap; gap: .5rem; padding: 1rem; }
+.bench-chip { background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: .3rem .75rem; font-size: .85rem; color: var(--muted); }
 
 /* On narrow screens keep the essentials: #, Player, ELO, W–L, Streak */
 @media (max-width: 640px) {
