@@ -12,6 +12,7 @@ const err = ref<string | null>(null)
 const newName = ref('')
 const busy = ref(false)
 const confirmId = ref<string | null>(null)   // player pending retire confirmation
+const showRetired = ref(false)                // retired roster collapsed by default
 
 async function load() {
   loading.value = true
@@ -90,15 +91,20 @@ async function setActive(id: string, makeActive: boolean) {
       </div>
       <p v-else class="muted">No active players yet.</p>
 
-      <!-- retired roster -->
+      <!-- retired roster — collapsed behind a dropdown so it doesn't lead the page -->
       <div class="card table retired-card" v-if="retired.length">
-        <div class="row head"><span>Retired</span><span /></div>
-        <div v-for="p in retired" :key="p.id" class="row">
-          <span class="name dim">{{ p.name }}</span>
-          <span class="actions">
-            <button v-if="isCommissioner" class="btn small" :disabled="busy" @click="setActive(p.id, true)">Reactivate</button>
-          </span>
-        </div>
+        <button class="row head retired-toggle" @click="showRetired = !showRetired">
+          <span>Retired <span class="rcount">({{ retired.length }})</span></span>
+          <span class="caret">{{ showRetired ? '▲' : '▼' }}</span>
+        </button>
+        <template v-if="showRetired">
+          <div v-for="p in retired" :key="p.id" class="row">
+            <span class="name dim">{{ p.name }}</span>
+            <span class="actions">
+              <button v-if="isCommissioner" class="btn small" :disabled="busy" @click="setActive(p.id, true)">Reactivate</button>
+            </span>
+          </div>
+        </template>
       </div>
     </template>
   </section>
@@ -127,4 +133,8 @@ async function setActive(id: string, makeActive: boolean) {
 .dim { color: var(--muted); }
 .actions { display: flex; align-items: center; gap: .5rem; justify-content: flex-end; }
 .retired-card { opacity: .85; }
+.retired-toggle { width: 100%; font-family: inherit; background: none; border: 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.retired-toggle:hover { background: var(--surface-2); }
+.rcount { color: var(--faint); font-weight: 400; }
+.caret { color: var(--muted); font-size: .8rem; justify-self: end; }
 </style>
