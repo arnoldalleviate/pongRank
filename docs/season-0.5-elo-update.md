@@ -37,7 +37,7 @@ S_loser      = 1 − S_winner
 A best-of-3 carries `series_k_mult` × the K of a single game (currently **2×**), so a *dominant series* moves ratings about twice as much as a *dominant single game*. A close series stays close to zero either way.
 
 ### Lower rating floor (1000 → 900)
-With the starting rating and the floor both at 1000, weaker players got pinned at 1000 and the math treated them as average — so **beating a pinned player was over-rewarded**. Dropping the floor to 900 lets ratings actually sink, so a win over a weaker player correctly pays less.
+With the starting rating and the floor both at 1000, newer players got pinned at 1000 and the math treated them as average — so **beating a pinned player was over-rewarded**. Dropping the floor to 900 lets ratings actually sink, so a win over a less experienced player correctly pays less.
 
 ---
 
@@ -76,3 +76,6 @@ All three are per-season levers, so they get re-tuned as Season 0 accumulates re
 | `elo_floor` | 900 | Lowest a rating can fall. |
 
 > Numbers above are the current settings and will be calibrated further as more matches are played.
+
+
+# Thank you so much for participating!
