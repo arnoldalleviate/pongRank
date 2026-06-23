@@ -11,6 +11,20 @@ const err = ref<string | null>(null)
 const lastPair = ref<string[]>([])   // the two players from the most recent completed match
 let channel: RealtimeChannel | null = null
 
+// Season infographics (live) + curated midseason titles (re-awarded at season's end).
+const recap = useSeasonRecap()
+const { stats: recapStats } = recap
+const AWARDS = [
+  { emoji: '🛋️', title: 'No-Lifer',     player: 'Joey',     context: '20 matches logged. We’ve stopped asking if Joey has a job, a family — the table is home now.' },
+  { emoji: '⚔️', title: 'Giant Slayer', player: 'Alec',     context: 'Walked up to the giant in the room (1133) and chopped them down. David had a sling; Alec had a paddle.' },
+  { emoji: '🪓', title: 'Berserker',    player: 'Evan',     context: 'Hurled himself at the toughest opponents and went down swinging. No fear, no defense, no survivors — himself included.' },
+  { emoji: '🐎', title: 'Dark Horse',   player: 'Jayden',   context: 'Games came down to the final points. Nobody’s safe when Jayden is playing.' },
+  { emoji: '🤺', title: 'The Duelist',  player: 'Erin',     context: '4-4, and somehow every one was a shootout to the last point. Do you feel lucky?' },
+  { emoji: '🐴', title: 'Work Horse',   player: 'Justin J', context: 'Took the hardest schedule in the league and just kept showing up. Respect the grind.' },
+  { emoji: '😴', title: 'The Sleeper',  player: 'Austin',   context: 'The Sleeper’s about to wake up.' },
+]
+const titleByName = Object.fromEntries(AWARDS.map((a) => [a.player, a]))
+
 async function load() {
   const { data, error } = await supabase
     .from('v_current_standings')
@@ -48,10 +62,11 @@ const bench = computed(() =>
 
 onMounted(() => {
   load()
+  recap.load()
   channel = supabase
     .channel('standings')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'player_season_stats' }, () => load())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => load())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => { load(); recap.load() })
     .subscribe()
 })
 
@@ -83,7 +98,12 @@ onUnmounted(() => {
         </div>
         <div v-for="(p, i) in played" :key="p.player_id" class="row" :class="{ recent: lastPair.includes(p.player_id) }">
           <span class="mono rank">{{ i + 1 }}</span>
-          <span class="name">{{ p.name }}</span>
+          <span class="name">
+            <span class="nm-text">{{ p.name }}</span>
+            <span v-if="titleByName[p.name]" class="flair" :title="titleByName[p.name].title">
+              <span class="fl-emoji">{{ titleByName[p.name].emoji }}</span><span class="fl-title">{{ titleByName[p.name].title }}</span>
+            </span>
+          </span>
           <span class="mono num elo" :title="`Peak ELO: ${p.peak_elo}`">{{ p.elo }}</span>
           <span class="mono num">{{ p.wins }}–{{ p.losses }}</span>
           <span class="mono num wide muted">{{ p.games_won }}–{{ p.games_lost }}</span>
@@ -105,6 +125,38 @@ onUnmounted(() => {
           <span v-for="p in bench" :key="p.player_id" class="bench-chip">{{ p.name }}</span>
         </div>
       </section>
+
+      <!-- Season recap: live infographics + curated midseason titles -->
+      <section v-if="recapStats && recapStats.matches" class="recap">
+        <h2 class="recap-h display">Season 0 · Midseason Recap</h2>
+        <div class="ig-grid">
+          <div class="ig"><span class="ig-num mono">{{ recapStats.matches }}</span><span class="ig-lbl">Matches</span></div>
+          <div class="ig"><span class="ig-num mono">{{ recapStats.games }}</span><span class="ig-lbl">Games</span></div>
+          <div class="ig"><span class="ig-num mono">{{ recapStats.points }}</span><span class="ig-lbl">Points scored</span></div>
+          <div class="ig"><span class="ig-num mono">{{ recapStats.closePct }}%</span><span class="ig-lbl">Nail-biters (≤3)</span></div>
+          <div class="ig"><span class="ig-num mono">{{ recapStats.avg }}</span><span class="ig-lbl">Avg pts / game</span></div>
+          <div class="ig"><span class="ig-num mono">{{ recapStats.highGame }}</span><span class="ig-lbl">Highest-scoring game</span></div>
+        </div>
+
+        <div class="award card finale">
+          <span class="aw-emoji">🏓</span>
+          <div class="aw-body">
+            <div class="aw-top"><span class="aw-title">Thanks for playing!</span></div>
+            <p class="aw-context">Season 0 has been a blast — every blowout, every deuce, every upset. The wild second half starts now, and the board is about to get chaotic. Know someone who’d love this? <strong>Bring a friend into the league and help us clear the bench.</strong> 🏓</p>
+          </div>
+        </div>
+
+        <h3 class="awards-h">🏅 Titles <span class="awards-sub">· midseason — re-awarded at season’s end</span></h3>
+        <div class="awards">
+          <div v-for="a in AWARDS" :key="a.title" class="award card">
+            <span class="aw-emoji">{{ a.emoji }}</span>
+            <div class="aw-body">
+              <div class="aw-top"><span class="aw-title">{{ a.title }}</span><span class="aw-player">{{ a.player }}</span></div>
+              <p class="aw-context">{{ a.context }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
     </template>
   </section>
 </template>
@@ -123,7 +175,15 @@ onUnmounted(() => {
 .head { color: var(--faint); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
 .num { text-align: right; }
 .head .num { text-align: right; }
-.name { font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.name { font-weight: 600; min-width: 0; display: flex; align-items: center; gap: .45rem; }
+.nm-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.flair {
+  flex: none; display: inline-flex; align-items: center; gap: .25rem;
+  font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+  color: var(--yellow); background: rgba(255, 203, 45, .12);
+  border: 1px solid var(--yellow-deep); border-radius: 999px; padding: .12rem .5rem;
+}
+.fl-emoji { font-size: .8rem; }
 .elo { color: var(--yellow); font-weight: 600; cursor: help; }
 .rank { color: var(--muted); }
 .pos { color: var(--good); }
@@ -142,6 +202,31 @@ onUnmounted(() => {
 .bench-list { display: flex; flex-wrap: wrap; gap: .5rem; padding: 1rem; }
 .bench-chip { background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: .3rem .75rem; font-size: .85rem; color: var(--muted); }
 
+/* Season recap — infographics + titles */
+.recap { margin-top: 2rem; }
+.recap-h { font-size: 1.15rem; margin: 0 0 .9rem; color: var(--ink); }
+.ig-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .6rem; margin-bottom: 1.75rem; }
+.ig {
+  display: flex; flex-direction: column; gap: .25rem; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 1rem .6rem; text-align: center;
+}
+.ig-num { font-size: 1.6rem; font-weight: 700; color: var(--yellow); line-height: 1; }
+.ig-lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); }
+
+.awards-h { font-size: 1rem; margin: 0 0 .75rem; color: var(--muted); }
+.awards-sub { font-size: .72rem; color: var(--faint); font-weight: 400; }
+.awards { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .7rem; }
+.award { display: flex; gap: .75rem; padding: .9rem 1rem; align-items: flex-start; }
+.aw-emoji { font-size: 1.6rem; line-height: 1; flex: none; }
+.aw-body { min-width: 0; }
+.aw-top { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; margin-bottom: .3rem; }
+.aw-title { font-family: var(--font-display); text-transform: uppercase; letter-spacing: .03em; color: var(--yellow); font-size: 1rem; }
+.aw-player { font-weight: 700; color: var(--ink); font-size: .9rem; }
+.aw-context { margin: 0; font-size: .82rem; color: var(--muted); line-height: 1.4; }
+.finale { margin: 0 0 1.75rem; align-items: center; border-left: 3px solid var(--yellow); background: rgba(255, 203, 45, .06); }
+.finale .aw-context { color: var(--ink); }
+.finale strong { color: var(--yellow); }
+
 /* On narrow screens keep the essentials: #, Player, ELO, W–L, Streak */
 @media (max-width: 640px) {
   .row {
@@ -150,5 +235,7 @@ onUnmounted(() => {
   }
   .wide { display: none; }
   .head > span:first-child, .rank { text-align: center; }   /* re-center the rank column */
+  .flair .fl-title { display: none; }                        /* emoji-only badge on phones */
+  .flair { padding: .1rem .3rem; }
 }
 </style>
