@@ -13,7 +13,7 @@ let channel: RealtimeChannel | null = null
 
 // Season infographics (live) + curated midseason titles (re-awarded at season's end).
 const recap = useSeasonRecap()
-const { stats: recapStats } = recap
+const { stats: recapStats, note: commishNote, noteUrl: commishUrl } = recap
 const AWARDS = [
   { emoji: '🛋️', title: 'No-Lifer',     player: 'Joey',     context: '20 matches logged. We’ve stopped asking if Joey has a job, a family — the table is home now.' },
   { emoji: '⚔️', title: 'Giant Slayer', player: 'Alec',     context: 'Walked up to the giant in the room (1133) and chopped them down. David had a sling; Alec had a paddle.' },
@@ -78,6 +78,13 @@ onUnmounted(() => {
 <template>
   <section>
     <h1 class="display page-title">Leaderboard</h1>
+
+    <div v-if="commishNote" class="commish-note">
+      <span class="commish-badge">📣 Commissioner</span>
+      <span class="commish-text">{{ commishNote }}
+        <a v-if="commishUrl" :href="commishUrl" target="_blank" rel="noopener" class="commish-link">Details →</a>
+      </span>
+    </div>
 
     <p v-if="loading" class="muted">Loading standings…</p>
     <p v-else-if="err" class="err">Couldn't load: {{ err }}</p>
@@ -165,6 +172,19 @@ onUnmounted(() => {
 .page-title { font-size: 2rem; margin: 0 0 1rem; }
 .muted { color: var(--muted); }
 .err { color: var(--bad); }
+
+/* commissioner announcement banner (mirrors the match-log one) */
+.commish-note {
+  display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap;
+  background: rgba(255, 203, 45, .07); border: 1px solid var(--line);
+  border-left: 3px solid var(--yellow); border-radius: var(--radius-sm);
+  padding: .7rem .9rem; margin-bottom: 1.25rem; font-size: .9rem; color: var(--ink);
+}
+.commish-badge { font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--yellow-deep); white-space: nowrap; }
+.commish-text { flex: 1; min-width: 12rem; }
+.commish-link { color: var(--yellow); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.commish-link:hover { text-decoration: underline; }
+
 .table { overflow: hidden; }
 .row {
   display: grid;
@@ -223,7 +243,7 @@ onUnmounted(() => {
 .aw-title { font-family: var(--font-display); text-transform: uppercase; letter-spacing: .03em; color: var(--yellow); font-size: 1rem; }
 .aw-player { font-weight: 700; color: var(--ink); font-size: .9rem; }
 .aw-context { margin: 0; font-size: .82rem; color: var(--muted); line-height: 1.4; }
-.finale { margin: 0 0 1.75rem; align-items: center; border-left: 3px solid var(--yellow); background: rgba(255, 203, 45, .06); }
+.finale { margin: 1.25rem 0 2.5rem; align-items: center; border-left: 3px solid var(--yellow); background: rgba(255, 203, 45, .06); }
 .finale .aw-context { color: var(--ink); }
 .finale strong { color: var(--yellow); }
 
