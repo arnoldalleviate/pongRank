@@ -52,11 +52,12 @@ function streakLabel(s: number) {
   return s > 0 ? `W${s}` : s < 0 ? `L${-s}` : '—'
 }
 
-// Players who've logged a match are ranked; 0-game players sit on the Bench
-// (so a still-at-start player can't appear to outrank someone who's played).
-const played = computed(() => standings.value.filter((p: any) => p.matches_played > 0))
+// Ranked = anyone who's logged a match OR been manually rated off the 1000
+// start (lets featured/exec players show on the board even at 0-0). A 0-game
+// player still sitting at the 1000 start stays on the Bench.
+const played = computed(() => standings.value.filter((p: any) => p.matches_played > 0 || p.elo !== 1000))
 const bench = computed(() =>
-  standings.value.filter((p: any) => !p.matches_played)
+  standings.value.filter((p: any) => !p.matches_played && p.elo === 1000)
     .slice().sort((a: any, b: any) => a.name.localeCompare(b.name)),
 )
 
