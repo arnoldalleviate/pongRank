@@ -11,7 +11,8 @@
 --
 --  REVERT after exec day:
 --    update seasons set k_override = 160 where id = (select active_season_id from app_settings where id = 1);
---    -- (and reset Erin/Jeff ELO to taste if desired)
+--    -- reset Erin/Jeff ELO to taste, and restore the prior banner
+--    -- (the Season 0.75 note — see 11_midseason_stress_test.sql section 3).
 -- =====================================================================
 
 -- make sure Jeff is active
@@ -25,6 +26,13 @@ where season_id = (select active_season_id from app_settings where id = 1)
 -- ELO swings 50× harder
 update seasons set k_override = 2000
 where id = (select active_season_id from app_settings where id = 1);
+
+-- Banner: announce Exec Day (swaps the Season 0.75 note)
+update app_settings set
+  commissioner_note =
+    '🎉 EXEC DAY — Erin & Jeff crash in at 5000 ELO and ratings now swing 50× harder. Slay an exec and leap up to +3,500 in a single match; lose and you''ll feel it. The board is pure chaos today — go get a giant. 🐉',
+  commissioner_note_url = null
+where id = 1;
 
 -- =====================================================================
 --  END EXEC DAY — let the carnage commence.

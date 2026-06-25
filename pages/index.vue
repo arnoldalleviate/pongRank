@@ -25,6 +25,9 @@ const AWARDS = [
 ]
 const titleByName = Object.fromEntries(AWARDS.map((a) => [a.player, a]))
 
+// Tournament hype banner (orange/red, sits under the commissioner note). Edit or clear here.
+const tournamentNote = 'Single-elimination bracket on the way — keep racking up games to earn your seed. Winner takes the crown. 🏆'
+
 async function load() {
   const { data, error } = await supabase
     .from('v_current_standings')
@@ -85,6 +88,11 @@ onUnmounted(() => {
       <span class="commish-text">{{ commishNote }}
         <a v-if="commishUrl" :href="commishUrl" target="_blank" rel="noopener" class="commish-link">Details →</a>
       </span>
+    </div>
+
+    <div v-if="tournamentNote" class="tourney-note">
+      <span class="tourney-badge">🏆 Tournament</span>
+      <span class="tourney-text">{{ tournamentNote }}</span>
     </div>
 
     <p v-if="loading" class="muted">Loading standings…</p>
@@ -185,6 +193,16 @@ onUnmounted(() => {
 .commish-text { flex: 1; min-width: 12rem; }
 .commish-link { color: var(--yellow); font-weight: 700; text-decoration: none; white-space: nowrap; }
 .commish-link:hover { text-decoration: underline; }
+
+/* tournament banner — orange/red, sits under the commissioner note */
+.tourney-note {
+  display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap;
+  background: rgba(255, 107, 53, .1); border: 1px solid #c2461f;
+  border-left: 3px solid #ff6b35; border-radius: var(--radius-sm);
+  padding: .7rem .9rem; margin-bottom: 1.25rem; font-size: .9rem; color: var(--ink);
+}
+.tourney-badge { font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #ff8a5c; white-space: nowrap; }
+.tourney-text { flex: 1; min-width: 12rem; }
 
 .table { overflow: hidden; }
 .row {
