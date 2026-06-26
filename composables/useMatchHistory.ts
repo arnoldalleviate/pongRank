@@ -45,6 +45,7 @@ export function useMatchHistory() {
         supabase.from('matches')
           .select('id,type,entry_mode,status,cancel_reason,player_a,player_b,winner_id,a_elo_change,b_elo_change,completed_at,games(game_number,score_a,score_b,winner_id)')
           .eq('season_id', seasonId).in('status', ['completed', 'cancelled'])
+          .is('tournament_match_id', null)
           .order('completed_at', { ascending: false }),
         supabase.from('players').select('id,name'),
         supabase.from('season_config_events').select('changed_at')

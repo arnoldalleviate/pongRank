@@ -21,7 +21,7 @@ onUnmounted(() => t.unsubscribe())
 // ---------- create ----------
 const newName = ref('')
 const newType = ref<'quick' | 'series'>('series')
-const newSeeding = ref<'elo' | 'manual'>('elo')
+const newSeeding = ref<'elo' | 'manual' | 'random'>('elo')
 async function doCreate() {
   if (!newName.value.trim()) return
   const ok = await t.createTournament(newName.value.trim(), newType.value, newSeeding.value)
@@ -35,6 +35,7 @@ watch([seedPool, participants, current], () => {
     seedIds.value = participants.value.length
       ? participants.value.map((p: any) => p.player_id)
       : seedPool.value.map((p: any) => p.id)
+    if (current.value?.seeding_method === 'random') shuffleSeeds()
   }
 }, { immediate: true })
 
@@ -47,6 +48,11 @@ function move(i: number, d: number) {
   const a = [...seedIds.value]; const j = i + d
   if (j < 0 || j >= a.length) return
   ;[a[i], a[j]] = [a[j], a[i]]
+  seedIds.value = a
+}
+function shuffleSeeds() {
+  const a = [...seedIds.value]
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] }
   seedIds.value = a
 }
 async function doStart() {
@@ -94,6 +100,7 @@ async function play(m: any) {
           <div class="seg">
             <button :class="{ on: newSeeding === 'elo' }" @click="newSeeding = 'elo'">Seed by ELO</button>
             <button :class="{ on: newSeeding === 'manual' }" @click="newSeeding = 'manual'">Manual</button>
+            <button :class="{ on: newSeeding === 'random' }" @click="newSeeding = 'random'">Random</button>
           </div>
           <button class="btn btn-yellow" :disabled="busy || !newName.trim()" @click="doCreate">Create</button>
         </div>
@@ -127,9 +134,12 @@ async function play(m: any) {
               <p v-if="!available.length" class="muted small">All players seeded.</p>
             </div>
           </div>
-          <button class="btn btn-yellow start" :disabled="busy || seedIds.length < 2" @click="doStart">
-            Start tournament ({{ seedIds.length }} players)
-          </button>
+          <div class="seed-actions">
+            <button class="btn" :disabled="busy || seedIds.length < 2" @click="shuffleSeeds">🎲 Shuffle</button>
+            <button class="btn btn-yellow" :disabled="busy || seedIds.length < 2" @click="doStart">
+              Start tournament ({{ seedIds.length }} players)
+            </button>
+          </div>
         </template>
         <p v-else class="muted">Being set up by the commissioner…</p>
       </div>
@@ -140,7 +150,8 @@ async function play(m: any) {
         <div class="bracket">
           <div v-for="col in rounds" :key="col.round" class="round">
             <div class="round-h">{{ col.round === rounds.length ? 'Final' : 'Round ' + col.round }}</div>
-            <div v-for="m in col.matches" :key="m.id" class="bm" :class="{ live: isLive(m), done: !!m.winner_id }">
+            <div v-for="m in col.matches" :key="m.id" class="bm" :class="{ live: isLive(m), done: !!m.winner_id, third: m.group_id === -1 }">
+              <div v-if="m.group_id === -1" class="bm-tag">3rd place</div>
               <div class="slot" :class="{ win: m.winner_id && m.winner_id === m.player_a }">{{ slotName(m.player_a, col.round) }}</div>
               <div class="slot" :class="{ win: m.winner_id && m.winner_id === m.player_b }">{{ slotName(m.player_b, col.round) }}</div>
               <div class="bm-foot">
@@ -183,6 +194,8 @@ async function play(m: any) {
 .mini { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); border-radius: 6px; padding: .2rem .45rem; cursor: pointer; font-size: .78rem; }
 .mini:disabled { opacity: .4; cursor: not-allowed; }
 .start { margin-top: 1rem; width: 100%; }
+.seed-actions { display: flex; gap: .6rem; margin-top: 1rem; }
+.seed-actions .btn:last-child { flex: 1; }
 
 .bracket-wrap { overflow-x: auto; }
 .bracket { display: flex; gap: 1.5rem; align-items: flex-start; min-width: min-content; }
@@ -191,6 +204,8 @@ async function play(m: any) {
 .bm { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
 .bm.live { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
 .bm.done { opacity: .92; }
+.bm.third { border-color: #c2461f; }
+.bm-tag { font-size: .6rem; text-transform: uppercase; letter-spacing: .05em; color: #ff8a5c; font-weight: 800; padding: .3rem .6rem .1rem; }
 .slot { padding: .5rem .7rem; font-weight: 600; border-bottom: 1px solid var(--line); color: var(--muted); }
 .slot.win { color: var(--ink); background: rgba(255, 203, 45, .08); }
 .bm-foot { padding: .35rem .5rem; min-height: 1.2rem; display: flex; justify-content: flex-end; }

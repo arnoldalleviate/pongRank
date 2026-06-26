@@ -84,15 +84,18 @@ export function useTournaments() {
     return !error
   }
 
-  const createTournament = (name: string, matchType: 'quick' | 'series', seeding: 'elo' | 'manual') =>
+  const createTournament = (name: string, matchType: 'quick' | 'series', seeding: 'elo' | 'manual' | 'random') =>
     run(() => supabase.rpc('create_tournament', { p_code: accessCode.value, p_name: name, p_match_type: matchType, p_seeding_method: seeding }))
   const setSeeds = (tournamentId: string, playerIds: string[]) =>
     run(() => supabase.rpc('set_tournament_seeds', { p_code: accessCode.value, p_tournament_id: tournamentId, p_player_ids: playerIds }))
   const startTournament = (tournamentId: string) =>
     run(() => supabase.rpc('start_tournament', { p_code: accessCode.value, p_tournament_id: tournamentId }))
+  // report a bracket result from final scores (ELO-neutral, advances the bracket)
+  const reportMatch = (tmId: string, games: { a: number; b: number }[]) =>
+    run(() => supabase.rpc('report_tournament_match', { p_code: accessCode.value, p_tm_id: tmId, p_games: games }))
 
   return {
     list, current, participants, bracket, rounds, champion, names, seedPool, loading, err, busy,
-    load, loadSeedPool, subscribe, unsubscribe, createTournament, setSeeds, startTournament,
+    load, loadSeedPool, subscribe, unsubscribe, createTournament, setSeeds, startTournament, reportMatch,
   }
 }
