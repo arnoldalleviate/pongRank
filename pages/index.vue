@@ -26,7 +26,7 @@ const AWARDS = [
 const titleByName = Object.fromEntries(AWARDS.map((a) => [a.player, a]))
 
 // Tournament hype banner (orange/red, sits under the commissioner note). Edit or clear here.
-const tournamentNote = 'Single-elimination bracket on the way — keep racking up games to earn your seed. Winner takes the crown. 🏆'
+const tournamentNote = 'Single-elimination bracket on the way — Played throughout next week. First matches: Monday -- Winner takes the crown. 🏆'
 
 async function load() {
   const { data, error } = await supabase

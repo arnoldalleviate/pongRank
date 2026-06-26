@@ -30,7 +30,7 @@ where id = (select active_season_id from app_settings where id = 1);
 -- Banner: announce Exec Day (swaps the Season 0.75 note)
 update app_settings set
   commissioner_note =
-    '🎉 EXEC DAY — Erin & Jeff crash in at 5000 ELO and ratings now swing 50× harder. Slay an exec and leap up to +3,500 in a single match; lose and you''ll feel it. The board is pure chaos today — go get a giant. 🐉',
+    '🎉 EXEC DAY — Erin & Jeff crash in at 5000 ELO and ratings now swing 50× harder. Play an exec and leap up to +3,500 in a single match; lose and you''ll feel it. The board is pure chaos today — if you aim for top you best not miss.',
   commissioner_note_url = null
 where id = 1;
 

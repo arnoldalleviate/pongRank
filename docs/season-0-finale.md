@@ -22,10 +22,10 @@ We handed out titles because a leaderboard could never capture all of it:
 
 And when the execs crashed the party at 5,000 ELO and we cranked the swings to 50×, you leaned all the way in — because by then everyone knew the rating was just a way to keep score of the fun.
 
-## That's the whole thing
+## That's the whole thing..
 A league only works if people show up, and you did — match after match, upset after upset, trash-talk and all. You brought *each other* together around a little blue table, and that was always the win condition. The standings were never the prize; the games were.
 
-## What's next
+## What's next?
 - A **single-elimination tournament** (best of 3) to crown Season 0.
 - **Season 1** — a fresh 1,000 for everyone and the "real" scoring system, where close games barely move and statement wins actually count. The training wheels (and the chaos) come off.
 
