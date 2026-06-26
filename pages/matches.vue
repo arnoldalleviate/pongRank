@@ -85,11 +85,33 @@ async function doRecord() {
   if (ok) { gi.value = [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }]; mh.load() }
 }
 
-// delete a completed match (commissioner) — confirm inline, then recompute
+// delete a completed match (commissioner) — local reverse of its ELO
 const delConfirm = ref<string | null>(null)
 async function doDelete(id: string) {
   const ok = await mh.deleteMatch(id)
   if (ok) delConfirm.value = null
+}
+
+// edit a misreported match (commissioner) — correct the game scores in place
+const editId = ref<string | null>(null)
+const editRows = ref<{ a: string; b: string }[]>([])
+function openEdit(m: any) {
+  delConfirm.value = null
+  // prefill from the match's per-game detail (e.g. ['11-7','9-11'])
+  const rows = (m.detail ?? []).map((s: string) => {
+    const [a, b] = String(s).split('-')
+    return { a: a ?? '', b: b ?? '' }
+  })
+  editRows.value = rows.length ? rows : [{ a: '', b: '' }]
+  editId.value = m.id
+}
+async function doEdit(id: string) {
+  const games = editRows.value
+    .filter((r) => r.a !== '' || r.b !== '')
+    .map((r) => ({ a: Number(r.a), b: Number(r.b) }))
+  if (!games.length) return
+  const ok = await mh.editMatch(id, games)
+  if (ok) editId.value = null
 }
 </script>
 
@@ -179,48 +201,64 @@ async function doDelete(id: string) {
         <p v-else-if="histErr" class="err">{{ histErr }}</p>
         <p v-else-if="!histMatches.length" class="muted">No matches yet.</p>
         <div v-else class="card hist-list">
-          <div
-            v-for="m in histMatches"
-            :key="m.id"
-            class="hrow"
-            :class="{ flagged: m.scoringAdjusted, cancelled: m.status === 'cancelled' }"
-          >
-            <span class="hdate mono">{{ fmtDate(m.completed_at) }}</span>
-            <span class="hresult">
-              <template v-if="m.status === 'cancelled'">
-                {{ m.playerAName }}<span class="vs">vs</span>{{ m.playerBName }}
-                <span class="tag cancel">cancelled</span>
-                <span v-if="m.cancelReason" class="reason">{{ m.cancelReason }}</span>
-              </template>
-              <template v-else>
-                <strong>{{ m.winnerName }}</strong> defeats {{ m.loserName }}
-                <span class="hscore mono">{{ m.scoreLine }}</span>
-                <span v-if="m.type === 'series' && m.detail.length" class="hgames mono">({{ m.detail.join(', ') }})</span>
-                <span v-if="m.entry_mode === 'quick_upload'" class="tag">uploaded</span>
-              </template>
-            </span>
-            <span v-if="m.status === 'cancelled'" class="helo mono dash">—</span>
-            <span
-              v-else
-              class="helo mono"
-              :title="`ELO change — ${m.winnerName}: +${m.winnerElo}, ${m.loserName}: ${m.loserElo}`"
+          <template v-for="m in histMatches" :key="m.id">
+            <div
+              class="hrow"
+              :class="{ flagged: m.scoringAdjusted, cancelled: m.status === 'cancelled' }"
             >
-              <span class="pos">+{{ m.winnerElo }}</span> / <span class="neg">{{ m.loserElo }}</span>
-            </span>
-            <span
-              v-if="m.scoringAdjusted"
-              class="flag"
-              title="Scoring system was adjusted by the commissioner before this match"
-            >⚡ adjusted</span>
-            <span v-else class="flag-spacer" />
-            <span v-if="isCommissioner" class="del">
-              <template v-if="delConfirm === m.id">
-                <button class="mini" :disabled="histBusy" @click="delConfirm = null">cancel</button>
-                <button class="mini danger" :disabled="histBusy" @click="doDelete(m.id)">delete</button>
-              </template>
-              <button v-else class="mini ghost" :disabled="histBusy" title="Delete match" @click="delConfirm = m.id">🗑</button>
-            </span>
-          </div>
+              <span class="hdate mono">{{ fmtDate(m.completed_at) }}</span>
+              <span class="hresult">
+                <template v-if="m.status === 'cancelled'">
+                  {{ m.playerAName }}<span class="vs">vs</span>{{ m.playerBName }}
+                  <span class="tag cancel">cancelled</span>
+                  <span v-if="m.cancelReason" class="reason">{{ m.cancelReason }}</span>
+                </template>
+                <template v-else>
+                  <strong>{{ m.winnerName }}</strong> defeats {{ m.loserName }}
+                  <span class="hscore mono">{{ m.scoreLine }}</span>
+                  <span v-if="m.type === 'series' && m.detail.length" class="hgames mono">({{ m.detail.join(', ') }})</span>
+                  <span v-if="m.entry_mode === 'quick_upload'" class="tag">uploaded</span>
+                </template>
+              </span>
+              <span v-if="m.status === 'cancelled'" class="helo mono dash">—</span>
+              <span
+                v-else
+                class="helo mono"
+                :title="`ELO change — ${m.winnerName}: +${m.winnerElo}, ${m.loserName}: ${m.loserElo}`"
+              >
+                <span class="pos">+{{ m.winnerElo }}</span> / <span class="neg">{{ m.loserElo }}</span>
+              </span>
+              <span
+                v-if="m.scoringAdjusted"
+                class="flag"
+                title="Scoring system was adjusted by the commissioner before this match"
+              >⚡ adjusted</span>
+              <span v-else class="flag-spacer" />
+              <span v-if="isCommissioner" class="del">
+                <template v-if="delConfirm === m.id">
+                  <button class="mini" :disabled="histBusy" @click="delConfirm = null">cancel</button>
+                  <button class="mini danger" :disabled="histBusy" @click="doDelete(m.id)">delete</button>
+                </template>
+                <template v-else>
+                  <button v-if="m.status !== 'cancelled'" class="mini ghost" :disabled="histBusy" title="Edit scores" @click="openEdit(m)">✎</button>
+                  <button class="mini ghost" :disabled="histBusy" title="Delete match" @click="delConfirm = m.id">🗑</button>
+                </template>
+              </span>
+            </div>
+            <div v-if="editId === m.id" class="hrow-edit">
+              <span class="muted small">Corrected scores</span>
+              <span v-for="(row, i) in editRows" :key="i" class="eg">
+                <span class="eg-lbl mono">G{{ i + 1 }}</span>
+                <input v-model="row.a" type="number" min="0" class="eg-in mono" />
+                <span class="updash">–</span>
+                <input v-model="row.b" type="number" min="0" class="eg-in mono" />
+              </span>
+              <span class="edit-acts">
+                <button class="mini" :disabled="histBusy" @click="editId = null">cancel</button>
+                <button class="mini save" :disabled="histBusy" @click="doEdit(m.id)">save</button>
+              </span>
+            </div>
+          </template>
         </div>
       </section>
     </template>
@@ -313,6 +351,15 @@ select {
 .mini.ghost { background: none; border-color: transparent; opacity: .55; }
 .mini.ghost:hover { opacity: 1; border-color: var(--line); }
 .mini.danger { background: rgba(244, 81, 108, .16); border-color: var(--bad); color: #ffb3c0; }
+.mini.save { background: var(--blue); border-color: var(--blue-deep); color: #fff; }
+.hrow-edit {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+  padding: .6rem 1rem .8rem; border-bottom: 1px solid var(--line); background: rgba(47, 111, 237, .05);
+}
+.eg { display: inline-flex; align-items: center; gap: .35rem; }
+.eg-lbl { color: var(--muted); font-size: .78rem; }
+.eg-in { width: 3.5rem; text-align: center; background: var(--bg); border: 1px solid var(--line); color: var(--ink); padding: .4rem; border-radius: var(--radius-sm); }
+.edit-acts { display: inline-flex; gap: .4rem; margin-left: auto; }
 @media (max-width: 640px) {
   .grid2 { grid-template-columns: 1fr; }
   /* stack each history row: date + ELO on top, result full-width, flag/delete footer */

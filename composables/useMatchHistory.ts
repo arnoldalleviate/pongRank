@@ -117,5 +117,15 @@ export function useMatchHistory() {
     return !error
   }
 
-  return { matches, loading, err, busy, note, noteUrl, load, subscribe, unsubscribe, deleteMatch }
+  // correct a completed league match's scores in place (local ELO reconcile)
+  async function editMatch(matchId: string, games: { a: number; b: number }[]) {
+    busy.value = true
+    const { error } = await supabase.rpc('edit_match', { p_code: accessCode.value, p_match_id: matchId, p_games: games })
+    if (error) err.value = error.message
+    else await load()
+    busy.value = false
+    return !error
+  }
+
+  return { matches, loading, err, busy, note, noteUrl, load, subscribe, unsubscribe, deleteMatch, editMatch }
 }
