@@ -68,13 +68,15 @@ function slotName(id: string | null, round: number) {
 }
 const liveTmId = computed(() => lm.match.value?.tournament_match_id ?? null)
 function isLive(m: any) { return liveTmId.value === m.id }
+// a matchup is "reportable" once both players are set and it has no result yet
 function playable(m: any) {
   return isOfficial.value && current.value?.status === 'active'
-    && m.player_a && m.player_b && !m.winner_id && !lm.match.value
+    && m.player_a && m.player_b && !m.winner_id
 }
-async function play(m: any) {
-  const ok = await lm.startTournamentMatch({ tmatchId: m.id, firstServer: m.player_a, colorA: 'blue', colorB: 'yellow' })
-  if (ok) navigateTo('/officiate')
+// Tournament games are reported on the Queue (not scored live) — send them there
+// rather than starting a live match, to avoid misclicks.
+function play() {
+  navigateTo('/queue')
 }
 </script>
 
@@ -155,7 +157,7 @@ async function play(m: any) {
               <div class="slot" :class="{ win: m.winner_id && m.winner_id === m.player_a }">{{ slotName(m.player_a, col.round) }}</div>
               <div class="slot" :class="{ win: m.winner_id && m.winner_id === m.player_b }">{{ slotName(m.player_b, col.round) }}</div>
               <div class="bm-foot">
-                <button v-if="playable(m)" class="btn btn-yellow mini" :disabled="busy" @click="play(m)">Play ▸</button>
+                <button v-if="playable(m)" class="btn btn-yellow mini" @click="play">Report ▸</button>
                 <span v-else-if="isLive(m)" class="live-badge">● live</span>
               </div>
             </div>
