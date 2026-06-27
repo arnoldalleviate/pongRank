@@ -5,7 +5,7 @@ When we spun up Season 0, the ELO and the leaderboard were always a bit of a jok
 Mission accomplished.
 
 ## It was never really about the rating
-The numbers were the excuse. The games were the point. And what games they were:
+The numbers were just an excuse. The games were the on point. And what games they were:
 
 - **38 matches · 91 games · 1,658 points** rallied across the season.
 - **More than half of every game — 51% — came down to the wire** (decided by 3 points or fewer). This office doesn't do blowouts; it does nail-biters.
@@ -19,8 +19,6 @@ We handed out titles because a leaderboard could never capture all of it:
 - 🐎 **Jayden, the Dark Horse** & 🤺 **Erin, the Duelist** — who turned nearly every game into a final-point thriller.
 - 🐴 **Justin J, the Work Horse** — took the hardest schedule and just kept showing up.
 - 😴 **Austin, the Sleeper** — still loading.
-
-And when the execs crashed the party at 5,000 ELO and we cranked the swings to 50×, you leaned all the way in — because by then everyone knew the rating was just a way to keep score of the fun.
 
 ## That's the whole thing..
 A league only works if people show up, and you did — match after match, upset after upset, trash-talk and all. You brought *each other* together around a little blue table, and that was always the win condition. The standings were never the prize; the games were.
