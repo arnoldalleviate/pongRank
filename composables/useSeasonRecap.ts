@@ -10,6 +10,7 @@ export function useSeasonRecap() {
   const loading = ref(true)
   const note = ref<string | null>(null)       // commissioner announcement
   const noteUrl = ref<string | null>(null)
+  const seasonName = ref<string | null>(null) // active season name (gates the Season-0 recap block)
 
   async function load() {
     const { data: s } = await supabase.rpc('get_public_settings')
@@ -18,6 +19,8 @@ export function useSeasonRecap() {
     noteUrl.value = set?.commissioner_note_url ?? null
     const seasonId = set?.active_season_id
     if (!seasonId) { loading.value = false; return }
+    const { data: srow } = await supabase.from('seasons').select('name').eq('id', seasonId).maybeSingle()
+    seasonName.value = srow?.name ?? null
 
     const { data } = await supabase
       .from('matches')
@@ -59,5 +62,5 @@ export function useSeasonRecap() {
     loading.value = false
   }
 
-  return { stats, loading, note, noteUrl, load }
+  return { stats, loading, note, noteUrl, seasonName, load }
 }

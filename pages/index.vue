@@ -13,7 +13,10 @@ let channel: RealtimeChannel | null = null
 
 // Season infographics (live) + curated midseason titles (re-awarded at season's end).
 const recap = useSeasonRecap()
-const { stats: recapStats, note: commishNote, noteUrl: commishUrl } = recap
+const { stats: recapStats, note: commishNote, noteUrl: commishUrl, seasonName } = recap
+// Season-0 celebration content (recap, titles, flair, tournament banner) shows only while
+// Season 0 is active — self-hides once the active season flips (e.g. to "Admiration").
+const isSeason0 = computed(() => seasonName.value === 'Season 0')
 const AWARDS = [
   { emoji: '🛋️', title: 'No-Lifer',     player: 'Joey',     context: '20 matches logged. We’ve stopped asking if Joey has a job, a family — the table is home now.' },
   { emoji: '⚔️', title: 'Giant Slayer', player: 'Alec',     context: 'Walked up to the giant in the room (1133) and chopped them down. David had a sling; Alec had a paddle.' },
@@ -90,7 +93,7 @@ onUnmounted(() => {
       </span>
     </div>
 
-    <div v-if="tournamentNote" class="tourney-note">
+    <div v-if="isSeason0 && tournamentNote" class="tourney-note">
       <span class="tourney-badge">🏆 Tournament</span>
       <span class="tourney-text">{{ tournamentNote }}</span>
     </div>
@@ -116,7 +119,7 @@ onUnmounted(() => {
           <span class="mono rank">{{ i + 1 }}</span>
           <span class="name">
             <span class="nm-text">{{ p.name }}</span>
-            <span v-if="titleByName[p.name]" class="flair" :title="titleByName[p.name].title">
+            <span v-if="isSeason0 && titleByName[p.name]" class="flair" :title="titleByName[p.name].title">
               <span class="fl-emoji">{{ titleByName[p.name].emoji }}</span><span class="fl-title">{{ titleByName[p.name].title }}</span>
             </span>
           </span>
@@ -143,7 +146,7 @@ onUnmounted(() => {
       </section>
 
       <!-- Season recap: live infographics + curated midseason titles -->
-      <section v-if="recapStats && recapStats.matches" class="recap">
+      <section v-if="isSeason0 && recapStats && recapStats.matches" class="recap">
         <h2 class="recap-h display">Season 0 · Midseason Recap</h2>
         <div class="ig-grid">
           <div class="ig"><span class="ig-num mono">{{ recapStats.matches }}</span><span class="ig-lbl">Matches</span></div>
