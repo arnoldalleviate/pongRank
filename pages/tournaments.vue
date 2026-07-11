@@ -87,8 +87,13 @@ function play() {
     <p v-if="loading" class="muted">Loading…</p>
 
     <template v-else>
-      <!-- champion -->
-      <p v-if="current?.status === 'completed' && champion" class="champ">🏆 {{ champion }} — Champion</p>
+      <!-- champion — celebratory card with a confetti burst -->
+      <div v-if="current?.status === 'completed' && champion" class="champ-card">
+        <Confetti mode="burst" :count="70" />
+        <span class="cc-flag" aria-hidden="true">🏆</span>
+        <div class="cc-name display">{{ champion }}</div>
+        <div class="cc-title">{{ current.name }} Champion</div>
+      </div>
 
       <!-- create (commissioner; when nothing active/in-setup) -->
       <div v-if="isCommissioner && (!current || current.status === 'completed')" class="card create">
@@ -177,7 +182,18 @@ function play() {
 .small { font-size: .8rem; }
 .err { color: var(--bad); }
 .h { font-size: 1.05rem; margin: 0 0 1rem; }
-.champ { text-align: center; color: var(--yellow); font-weight: 800; font-size: 1.3rem; margin: 0 0 1.25rem; }
+/* champion card — the completed-tournament moment (confetti bursts from here) */
+.champ-card {
+  position: relative; overflow: visible; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: .3rem;
+  padding: 1.5rem 1.25rem; margin: 0 0 1.5rem;
+  border: 1px solid var(--yellow-deep); border-radius: var(--radius);
+  background: radial-gradient(120% 120% at 50% 0%, rgba(255, 203, 45, .16), rgba(255, 203, 45, .04) 60%, transparent);
+  box-shadow: 0 0 40px -14px var(--yellow);
+}
+.cc-flag { font-size: 2rem; line-height: 1; }
+.cc-name { font-size: 2rem; color: var(--yellow); letter-spacing: .02em; }
+.cc-title { font-size: .8rem; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
 
 .create { padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; }
 .create .row { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }

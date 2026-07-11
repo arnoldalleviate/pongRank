@@ -26,13 +26,15 @@ values
 select activate_season('<commissioner_code>',
   (select id from seasons where name = 'Admiration' order by created_at desc limit 1));
 
--- 3) launch banner (leaderboard + match log)
+-- 3) launch banner (leaderboard + match log) — thanks + champion send-off
 update app_settings set
-  commissioner_note = '🎉 Season 1: Admiration is live — everyone resets to 2000 and the real scoring is on (close games barely move, statement wins count). Season 0''s champions are in the books. Fresh ladder — let''s play.',
+  commissioner_note = '🏆 That''s a wrap on Season 0 — congrats to Alec, our first champion (def. Erin in the final, with Joey on the podium)! Thank you to everyone who picked up a paddle and made the first season a blast. Season 1 — Admiration — is now live: everyone resets to 2000 and the real scoring is on (close games barely move, statement wins count). Fresh ladder — let''s run it back.',
   commissioner_note_url = 'https://github.com/arnoldalleviate/pongRank/blob/dev/docs/season-0-finale.md'
 where id = 1;
 
 -- =====================================================================
---  END — Season 1 open. The leaderboard auto-drops the Season-0 recap/titles/
---  flair/tournament banner (they're gated to the "Season 0" name).
+--  END — Season 1 open. (Season-0 titles/flair/tournament banner were retired
+--  in the app; the recap is now a frozen archive dropdown. The champion podium
+--  is controlled by show_champion_podium — see 18_champion_podium_toggle.sql —
+--  and is NOT affected by this reset.)
 -- =====================================================================

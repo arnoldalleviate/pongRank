@@ -11,25 +11,29 @@ const err = ref<string | null>(null)
 const lastPair = ref<string[]>([])   // the two players from the most recent completed match
 let channel: RealtimeChannel | null = null
 
-// Season infographics (live) + curated midseason titles (re-awarded at season's end).
+// Commissioner announcement (live). Season 0's recap is archived below as a frozen snapshot.
 const recap = useSeasonRecap()
-const { stats: recapStats, note: commishNote, noteUrl: commishUrl, seasonName } = recap
-// Season-0 celebration content (recap, titles, flair, tournament banner) shows only while
-// Season 0 is active — self-hides once the active season flips (e.g. to "Admiration").
-const isSeason0 = computed(() => seasonName.value === 'Season 0')
-const AWARDS = [
-  { emoji: '🛋️', title: 'No-Lifer',     player: 'Joey',     context: '20 matches logged. We’ve stopped asking if Joey has a job, a family — the table is home now.' },
-  { emoji: '⚔️', title: 'Giant Slayer', player: 'Alec',     context: 'Walked up to the giant in the room (1133) and chopped them down. David had a sling; Alec had a paddle.' },
-  { emoji: '🪓', title: 'Berserker',    player: 'Evan',     context: 'Hurled himself at the toughest opponents and went down swinging. No fear, no defense, no survivors — himself included.' },
-  { emoji: '🐎', title: 'Dark Horse',   player: 'Jayden',   context: 'Games came down to the final points. Nobody’s safe when Jayden is playing.' },
-  { emoji: '🤺', title: 'The Duelist',  player: 'Erin',     context: '4-4, and somehow every one was a shootout to the last point. Do you feel lucky?' },
-  { emoji: '🐴', title: 'Work Horse',   player: 'Justin J', context: 'Took the hardest schedule in the league and just kept showing up. Respect the grind.' },
-  { emoji: '😴', title: 'The Sleeper',  player: 'Austin',   context: 'The Sleeper’s about to wake up.' },
-]
-const titleByName = Object.fromEntries(AWARDS.map((a) => [a.player, a]))
-
-// Tournament hype banner (orange/red, sits under the commissioner note). Edit or clear here.
-const tournamentNote = 'Single-elimination bracket on the way — Played throughout next week. First matches: Monday -- Winner takes the crown. 🏆'
+const { note: commishNote, noteUrl: commishUrl } = recap
+// Permanent tournament-champion badge (🏆) — derived from all completed
+// tournaments, so it persists on the winner's row across season resets.
+// currentChampion additionally drives the LOUD reigning-champion row treatment
+// (big "S0" watermark + gold wash), which self-retires when the season flips.
+const { currentChampion, placeByName, load: loadChampion } = useChampion()
+const champName = computed(() => currentChampion.value?.championName ?? null)
+// Tiled "S0" watermark for the reigning champion's nameplate — a repeating SVG
+// pattern (two staggered instances per tile = seamless brick repeat).
+const platePattern = computed(() => {
+  const label = currentChampion.value?.label || 'S0'
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' width='58' height='34'>` +
+    `<g font-family='Arial Black, Arial, sans-serif' font-weight='900' font-size='12' letter-spacing='0.5' fill='#FFCB2D' fill-opacity='0.15'>` +
+    `<text x='4' y='13'>${label}</text>` +
+    `<text x='33' y='30'>${label}</text>` +
+    `</g></svg>`
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`
+})
+// Season 0 final recap — FROZEN snapshot (archived; no longer computed live).
+const SEASON0_RECAP = { matches: 55, games: 131, points: 2376, closePct: 47, avg: '18.1', highGame: '22–20' }
 
 async function load() {
   const { data, error } = await supabase
@@ -70,6 +74,7 @@ const bench = computed(() =>
 onMounted(() => {
   load()
   recap.load()
+  loadChampion()
   channel = supabase
     .channel('standings')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'player_season_stats' }, () => load())
@@ -93,11 +98,6 @@ onUnmounted(() => {
       </span>
     </div>
 
-    <div v-if="isSeason0 && tournamentNote" class="tourney-note">
-      <span class="tourney-badge">🏆 Tournament</span>
-      <span class="tourney-text">{{ tournamentNote }}</span>
-    </div>
-
     <p v-if="loading" class="muted">Loading standings…</p>
     <p v-else-if="err" class="err">Couldn't load: {{ err }}</p>
     <p v-else-if="!standings.length" class="muted">
@@ -117,10 +117,19 @@ onUnmounted(() => {
         </div>
         <div v-for="(p, i) in played" :key="p.player_id" class="row" :class="{ recent: lastPair.includes(p.player_id) }">
           <span class="mono rank">{{ i + 1 }}</span>
-          <span class="name">
+          <span
+            class="name"
+            :class="{ 'name-champ': p.name === champName }"
+            :style="p.name === champName ? { backgroundImage: platePattern } : null"
+          >
             <span class="nm-text">{{ p.name }}</span>
-            <span v-if="isSeason0 && titleByName[p.name]" class="flair" :title="titleByName[p.name].title">
-              <span class="fl-emoji">{{ titleByName[p.name].emoji }}</span><span class="fl-title">{{ titleByName[p.name].title }}</span>
+            <span
+              v-if="placeByName[p.name]"
+              class="place-badge"
+              :class="`rank${placeByName[p.name].rank}`"
+              :title="`${placeByName[p.name].tournamentName} ${placeByName[p.name].title}`"
+            >
+              <span class="pb-emoji">{{ placeByName[p.name].medal }}</span><span class="pb-label">{{ placeByName[p.name].label }}</span>
             </span>
           </span>
           <span class="mono num elo" :title="`Peak ELO: ${p.peak_elo}`">{{ p.elo }}</span>
@@ -145,37 +154,29 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <!-- Season recap: live infographics + curated midseason titles -->
-      <section v-if="isSeason0 && recapStats && recapStats.matches" class="recap">
-        <h2 class="recap-h display">Season 0 · Midseason Recap</h2>
+      <!-- Season 0 archive — frozen recap snapshot, stashed in a collapsible dropdown -->
+      <details class="s0-archive">
+        <summary class="s0-summary">
+          <span class="s0-chip">Season 0</span>
+          <span class="s0-sub">Final recap</span>
+        </summary>
         <div class="ig-grid">
-          <div class="ig"><span class="ig-num mono">{{ recapStats.matches }}</span><span class="ig-lbl">Matches</span></div>
-          <div class="ig"><span class="ig-num mono">{{ recapStats.games }}</span><span class="ig-lbl">Games</span></div>
-          <div class="ig"><span class="ig-num mono">{{ recapStats.points }}</span><span class="ig-lbl">Points scored</span></div>
-          <div class="ig"><span class="ig-num mono">{{ recapStats.closePct }}%</span><span class="ig-lbl">Nail-biters (≤3)</span></div>
-          <div class="ig"><span class="ig-num mono">{{ recapStats.avg }}</span><span class="ig-lbl">Avg pts / game</span></div>
-          <div class="ig"><span class="ig-num mono">{{ recapStats.highGame }}</span><span class="ig-lbl">Highest-scoring game</span></div>
+          <div class="ig"><span class="ig-num mono">{{ SEASON0_RECAP.matches }}</span><span class="ig-lbl">Matches</span></div>
+          <div class="ig"><span class="ig-num mono">{{ SEASON0_RECAP.games }}</span><span class="ig-lbl">Games</span></div>
+          <div class="ig"><span class="ig-num mono">{{ SEASON0_RECAP.points }}</span><span class="ig-lbl">Points scored</span></div>
+          <div class="ig"><span class="ig-num mono">{{ SEASON0_RECAP.closePct }}%</span><span class="ig-lbl">Nail-biters (≤3)</span></div>
+          <div class="ig"><span class="ig-num mono">{{ SEASON0_RECAP.avg }}</span><span class="ig-lbl">Avg pts / game</span></div>
+          <div class="ig"><span class="ig-num mono">{{ SEASON0_RECAP.highGame }}</span><span class="ig-lbl">Highest-scoring game</span></div>
         </div>
 
         <div class="award card finale">
           <span class="aw-emoji">🏓</span>
           <div class="aw-body">
             <div class="aw-top"><span class="aw-title">Thanks for playing!</span></div>
-            <p class="aw-context">Season 0 has been a blast — every blowout, every deuce, every upset. The wild second half starts now, and the board is about to get chaotic. Know someone who’d love this? <strong>Bring a friend into the league and help us clear the bench.</strong> 🏓</p>
+            <p class="aw-context">Season 0 was a blast — every blowout, every deuce, every upset. Know someone who’d love this? <strong>Bring a friend into the league and help us clear the bench.</strong> 🏓</p>
           </div>
         </div>
-
-        <h3 class="awards-h">🏅 Titles <span class="awards-sub">· midseason — re-awarded at season’s end</span></h3>
-        <div class="awards">
-          <div v-for="a in AWARDS" :key="a.title" class="award card">
-            <span class="aw-emoji">{{ a.emoji }}</span>
-            <div class="aw-body">
-              <div class="aw-top"><span class="aw-title">{{ a.title }}</span><span class="aw-player">{{ a.player }}</span></div>
-              <p class="aw-context">{{ a.context }}</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      </details>
     </template>
   </section>
 </template>
@@ -197,16 +198,6 @@ onUnmounted(() => {
 .commish-link { color: var(--yellow); font-weight: 700; text-decoration: none; white-space: nowrap; }
 .commish-link:hover { text-decoration: underline; }
 
-/* tournament banner — orange/red, sits under the commissioner note */
-.tourney-note {
-  display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap;
-  background: rgba(255, 107, 53, .1); border: 1px solid #c2461f;
-  border-left: 3px solid #ff6b35; border-radius: var(--radius-sm);
-  padding: .7rem .9rem; margin-bottom: 1.25rem; font-size: .9rem; color: var(--ink);
-}
-.tourney-badge { font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #ff8a5c; white-space: nowrap; }
-.tourney-text { flex: 1; min-width: 12rem; }
-
 .table { overflow: hidden; }
 .row {
   display: grid;
@@ -219,13 +210,23 @@ onUnmounted(() => {
 .head .num { text-align: right; }
 .name { font-weight: 600; min-width: 0; display: flex; align-items: center; gap: .45rem; }
 .nm-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.flair {
-  flex: none; display: inline-flex; align-items: center; gap: .25rem;
-  font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
-  color: var(--yellow); background: rgba(255, 203, 45, .12);
-  border: 1px solid var(--yellow-deep); border-radius: 999px; padding: .12rem .5rem;
+/* permanent podium badge — gold/silver/bronze fill */
+.place-badge {
+  flex: none; display: inline-flex; align-items: center; gap: .25rem; cursor: help;
+  font-size: .64rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+  border: 1px solid; border-radius: 999px; padding: .12rem .5rem;
 }
-.fl-emoji { font-size: .8rem; }
+.place-badge.rank1 { background: var(--yellow); border-color: var(--yellow-deep); color: #1a1300; }
+.place-badge.rank2 { background: #cfd3d9; border-color: #9aa0a8; color: #1c2026; }
+.place-badge.rank3 { background: #d69a6e; border-color: #a9663a; color: #2a1608; }
+.pb-emoji { font-size: .8rem; }
+/* reigning champion's nameplate — tiled "S0" watermark (bg image set inline),
+   gold-engraved plate. Loud, current-season only; retires with the season. */
+.name-champ {
+  padding: .25rem .5rem; margin: -.25rem 0;   /* room for the tile, same row height */
+  background-repeat: repeat;                    /* gentle tiled "S0" lettering only, no fill */
+}
+.name-champ .nm-text { color: var(--yellow); font-weight: 800; }
 .elo { color: var(--yellow); font-weight: 600; cursor: help; }
 .rank { color: var(--muted); }
 .pos { color: var(--good); }
@@ -244,10 +245,16 @@ onUnmounted(() => {
 .bench-list { display: flex; flex-wrap: wrap; gap: .5rem; padding: 1rem; }
 .bench-chip { background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: .3rem .75rem; font-size: .85rem; color: var(--muted); }
 
-/* Season recap — infographics + titles */
-.recap { margin-top: 2rem; }
-.recap-h { font-size: 1.15rem; margin: 0 0 .9rem; color: var(--ink); }
-.ig-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .6rem; margin-bottom: 1.75rem; }
+/* Season 0 archive — frozen recap in a collapsible dropdown */
+.s0-archive { margin-top: 2rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); overflow: hidden; }
+.s0-summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: .6rem; padding: .9rem 1.1rem; }
+.s0-summary::-webkit-details-marker { display: none; }
+.s0-summary::after { content: '▸'; margin-left: auto; color: var(--faint); transition: transform .15s ease; }
+.s0-archive[open] .s0-summary { border-bottom: 1px solid var(--line); }
+.s0-archive[open] .s0-summary::after { transform: rotate(90deg); }
+.s0-chip { font-family: var(--font-display); text-transform: uppercase; letter-spacing: .04em; color: var(--yellow); font-size: 1rem; }
+.s0-sub { font-size: .78rem; color: var(--faint); }
+.ig-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .6rem; margin: 1rem; }
 .ig {
   display: flex; flex-direction: column; gap: .25rem; align-items: center; justify-content: center;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 1rem .6rem; text-align: center;
@@ -255,17 +262,13 @@ onUnmounted(() => {
 .ig-num { font-size: 1.6rem; font-weight: 700; color: var(--yellow); line-height: 1; }
 .ig-lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); }
 
-.awards-h { font-size: 1rem; margin: 0 0 .75rem; color: var(--muted); }
-.awards-sub { font-size: .72rem; color: var(--faint); font-weight: 400; }
-.awards { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .7rem; }
 .award { display: flex; gap: .75rem; padding: .9rem 1rem; align-items: flex-start; }
 .aw-emoji { font-size: 1.6rem; line-height: 1; flex: none; }
 .aw-body { min-width: 0; }
 .aw-top { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; margin-bottom: .3rem; }
 .aw-title { font-family: var(--font-display); text-transform: uppercase; letter-spacing: .03em; color: var(--yellow); font-size: 1rem; }
-.aw-player { font-weight: 700; color: var(--ink); font-size: .9rem; }
 .aw-context { margin: 0; font-size: .82rem; color: var(--muted); line-height: 1.4; }
-.finale { margin: 1.25rem 0 2.5rem; align-items: center; border-left: 3px solid var(--yellow); background: rgba(255, 203, 45, .06); }
+.finale { margin: 0 1rem 1rem; align-items: center; border-left: 3px solid var(--yellow); background: rgba(255, 203, 45, .06); }
 .finale .aw-context { color: var(--ink); }
 .finale strong { color: var(--yellow); }
 
@@ -277,7 +280,7 @@ onUnmounted(() => {
   }
   .wide { display: none; }
   .head > span:first-child, .rank { text-align: center; }   /* re-center the rank column */
-  .flair .fl-title { display: none; }                        /* emoji-only badge on phones */
-  .flair { padding: .1rem .3rem; }
+  .place-badge .pb-label { display: none; }                  /* medal-only badge on phones */
+  .place-badge { padding: .1rem .3rem; }
 }
 </style>

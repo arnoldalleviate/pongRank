@@ -1,6 +1,9 @@
 <script setup lang="ts">
 const { role, isOfficial, isCommissioner, init, setCode, clear } = useRole()
 const { match: liveMatch, decided, start: startLiveMatch } = useLiveMatch()
+// App-wide champion ribbon — shows the active season's tournament winner on
+// every page, and self-retires when the season flips (see useChampion).
+const { currentChampion, load: loadChampion } = useChampion()
 const showCodeEntry = ref(false)
 const codeInput = ref('')
 const menuOpen = ref(false)   // mobile hamburger drawer
@@ -13,6 +16,7 @@ function toggleMenu() {
 onMounted(() => {
   init()
   startLiveMatch()
+  loadChampion()
 })
 
 async function submitCode() {
@@ -67,6 +71,35 @@ async function submitCode() {
       <LiveMatchDock v-if="liveMatch" />
       <Confetti v-if="liveMatch && decided" mode="rain" />
     </header>
+
+    <div v-if="currentChampion" class="podium">
+      <div class="podium-inner">
+        <NuxtLink to="/tournaments" class="champ-strip gold">
+          <span class="cs-flag" aria-hidden="true">🏆</span>
+          <span class="cs-main">
+            <strong class="cs-name">{{ currentChampion.championName }}</strong>
+            <span class="cs-title">{{ currentChampion.name }} Champion</span>
+          </span>
+          <span class="cs-flag" aria-hidden="true">🏆</span>
+        </NuxtLink>
+        <div class="minor">
+          <NuxtLink v-if="currentChampion.silverName" to="/tournaments" class="champ-strip silver">
+            <span class="cs-medal" aria-hidden="true">🥈</span>
+            <span class="cs-main">
+              <strong class="cs-name sm">{{ currentChampion.silverName }}</strong>
+              <span class="cs-title">Runner-up</span>
+            </span>
+          </NuxtLink>
+          <NuxtLink v-if="currentChampion.bronzeName" to="/tournaments" class="champ-strip bronze">
+            <span class="cs-medal" aria-hidden="true">🥉</span>
+            <span class="cs-main">
+              <strong class="cs-name sm">{{ currentChampion.bronzeName }}</strong>
+              <span class="cs-title">3rd Place</span>
+            </span>
+          </NuxtLink>
+        </div>
+      </div>
+    </div>
 
     <div v-if="showCodeEntry" class="code-entry card">
       <input
@@ -156,6 +189,54 @@ async function submitCode() {
   padding: .55rem .75rem; border-radius: var(--radius-sm); font-family: var(--font-mono);
 }
 .content { padding: 1.5rem 1.25rem; max-width: 1100px; width: 100%; margin: 0 auto; }
+
+/* App-wide champion podium — a contained banner that lines up with the
+   leaderboard (same 1100px max-width + side padding as .content). Gold champion
+   on top, silver + bronze beneath. Self-retires when the season flips. */
+.podium { max-width: 1100px; margin: 1.25rem auto 0; padding: 0 1.25rem; width: 100%; }
+.podium-inner {
+  border: 1px solid var(--yellow-deep); border-radius: var(--radius); overflow: hidden;
+  box-shadow: 0 8px 24px -12px rgba(255, 203, 45, .5);
+}
+.champ-strip {
+  display: flex; align-items: center; justify-content: center; gap: .75rem; flex-wrap: wrap;
+  padding: .5rem 1.25rem; text-decoration: none; color: #1a1300;
+}
+.champ-strip:hover { filter: brightness(1.04); }
+.cs-flag { font-size: 1.15rem; line-height: 1; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
+.cs-medal { font-size: 1rem; line-height: 1; }
+.cs-main { display: inline-flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; justify-content: center; }
+.cs-name { font-family: var(--font-display); font-size: 1.05rem; letter-spacing: .02em; color: #140f00; }
+.cs-name.sm { font-size: .9rem; }
+.cs-title { font-weight: 800; text-transform: uppercase; letter-spacing: .08em; font-size: .7rem; color: #4a3800; }
+
+/* gold — the loud one: brighter, taller, shimmering */
+.champ-strip.gold {
+  padding: .6rem 1.25rem;
+  background: linear-gradient(100deg, var(--yellow-deep) 0%, var(--yellow) 25%, #fff2c2 50%, var(--yellow) 75%, var(--yellow-deep) 100%);
+  background-size: 200% 100%; animation: champ-shimmer 6s linear infinite;
+}
+/* silver + bronze — quieter minor placements, split into two on wide screens */
+.minor { display: flex; }
+.minor .champ-strip { flex: 1; border-top: 1px solid rgba(0, 0, 0, .12); }
+.champ-strip.silver {
+  background: linear-gradient(100deg, #9aa0a8 0%, #cfd3d9 30%, #eef0f2 50%, #cfd3d9 70%, #9aa0a8 100%);
+  color: #1c2026;
+}
+.champ-strip.silver .cs-name, .champ-strip.silver .cs-title { color: #1c2026; }
+.champ-strip.bronze {
+  background: linear-gradient(100deg, #a9663a 0%, #cd8b5c 30%, #e6ab80 50%, #cd8b5c 70%, #a9663a 100%);
+  color: #2a1608;
+}
+.champ-strip.bronze .cs-name, .champ-strip.bronze .cs-title { color: #2a1608; }
+.minor .champ-strip.bronze { border-left: 1px solid rgba(0, 0, 0, .12); }
+
+@keyframes champ-shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .champ-strip.gold { animation: none; } }
+@media (max-width: 560px) {
+  .minor { flex-direction: column; }
+  .minor .champ-strip.bronze { border-left: 0; }
+}
 
 /* Below desktop widths, drop the CTA out of absolute-center onto its own
    full-width row so it never overlaps the nav. */
