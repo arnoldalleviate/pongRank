@@ -9,6 +9,7 @@ const standings = ref<any[]>([])
 const loading = ref(true)
 const err = ref<string | null>(null)
 const lastPair = ref<string[]>([])   // the two players from the most recent completed match
+const baseRating = ref(1000)         // active season's start rating — drives the ranked/bench split
 let channel: RealtimeChannel | null = null
 
 // Commissioner announcement (live). Season 0's recap is archived below as a frozen snapshot.
@@ -43,15 +44,19 @@ async function load() {
   if (error) err.value = error.message
   else { standings.value = data ?? []; err.value = null }
 
-  // highlight the two players from the most recent completed match this season
+  // highlight the two players from the most recent completed match this season,
+  // and read the season's base rating (drives the ranked/bench split)
   const seasonId = (data ?? [])[0]?.season_id
   if (seasonId) {
-    const { data: last } = await supabase
-      .from('matches')
-      .select('player_a,player_b')
-      .eq('status', 'completed').eq('season_id', seasonId)
-      .order('completed_at', { ascending: false }).limit(1).maybeSingle()
+    const [{ data: last }, { data: srow }] = await Promise.all([
+      supabase.from('matches')
+        .select('player_a,player_b')
+        .eq('status', 'completed').eq('season_id', seasonId)
+        .order('completed_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('seasons').select('start_rating').eq('id', seasonId).maybeSingle(),
+    ])
     lastPair.value = last ? [last.player_a, last.player_b] : []
+    baseRating.value = srow?.start_rating ?? 1000
   } else {
     lastPair.value = []
   }
@@ -62,12 +67,12 @@ function streakLabel(s: number) {
   return s > 0 ? `W${s}` : s < 0 ? `L${-s}` : '—'
 }
 
-// Ranked = anyone who's logged a match OR been manually rated off the 1000
-// start (lets featured/exec players show on the board even at 0-0). A 0-game
-// player still sitting at the 1000 start stays on the Bench.
-const played = computed(() => standings.value.filter((p: any) => p.matches_played > 0 || p.elo !== 1000))
+// Ranked = anyone who's logged a match OR been manually rated off the season's
+// base rating (lets featured/exec players show on the board even at 0-0). A
+// 0-game player still sitting at the base rating stays on the Bench.
+const played = computed(() => standings.value.filter((p: any) => p.matches_played > 0 || p.elo !== baseRating.value))
 const bench = computed(() =>
-  standings.value.filter((p: any) => !p.matches_played && p.elo === 1000)
+  standings.value.filter((p: any) => !p.matches_played && p.elo === baseRating.value)
     .slice().sort((a: any, b: any) => a.name.localeCompare(b.name)),
 )
 
